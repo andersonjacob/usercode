@@ -1,0 +1,18 @@
+<use name=FWCore/Framework>
+<use name=FWCore/PluginManager>
+<use name=FWCore/ParameterSet>
+<use name=DataFormats/HcalRecHit>
+<use name=DataFormats/HcalDigi>
+<use name=DataFormats/CaloTowers>
+<use name=DataFormats/HepMCCandidate>
+<use name=SimDataFormats/CaloHit>
+<use name=SimDataFormats/CaloTest>
+<use name=DataFormats/MuonReco>
+<use name=TrackingTools/TrackAssociator>
+<use name=root>
+<use name=roofit>
+<use name=rootcore>
+<flags EDM_PLUGIN=1>
+<export>
+   <lib name=HOSiPMHOSiPMAnalysis>
+</export>
