@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Sep  3 09:02:21 CDT 2009
-// $Id$
+// $Id: HOWithReco.cc,v 1.1 2010/03/26 16:02:15 andersj Exp $
 //
 //
 
@@ -297,8 +297,8 @@ HOWithReco::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if ((det.ieta() == HOmaxEta) && (det.iphi() == HOmaxPhi)) {
 	HOmaxE += hitsum->second;
       }
-      if ((hitsum->second > HOmaxE) && (det.ietaAbs()<10)) {
-	HOmaxE += hitsum->second;
+      if ((hitsum->second > HOmaxE) && (det.ietaAbs()<16)) {
+	HOmaxE = hitsum->second;
 	HOmaxEta = det.ieta();
 	HOmaxPhi = det.iphi();
       }

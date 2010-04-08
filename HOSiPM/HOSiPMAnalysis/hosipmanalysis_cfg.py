@@ -3,81 +3,73 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("Demo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
+process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.StandardSequences.GeometryExtended_cff')
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.load("Configuration.StandardSequences.Reconstruction_cff")
+from TrackingTools.TrackAssociator.default_cfi import TrackAssociatorParameterBlock
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.GlobalTag.globaltag = 'MC_3XY_V21::All'
 
-process.source = cms.Source("PoolSource",
-    # replace 'myfile.root' with the source file you want to use
-    duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
-#    fileNames = cms.untracked.vstring(
-#        'file:../../HO/SinglePionE300_reco_1.root'
-#    )
-    fileNames = cms.untracked.vstring(
-    #'file:/uscms_data/d2/andersj/HO/SingleMuonE150.root'
-#    'file:../../muminE100Hot.root'
-    'file:/uscms_data/d2/andersj/mu/mumin_e_10_60_hacked.root'
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_9.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_8.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_7.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_6.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_5.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_4.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_3.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_25.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_24.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_23.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_22.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_21.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_20.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_2.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_19.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_18.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_17.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_16.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_15.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_14.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_13.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_12.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_11.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_10.root',
-## '/store/user/andersj/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/TeVpiMinus_HOSiPM_LowGain_5fCMIP_CMSSW_3_3_0/6cd5d5c7f0880963f9ca2f4fdf44d555/pimin1000_1.root'
+process.load("RecoMuon.MuonIdentification.links_cfi")
 
-##     '/store/user/andersj/SingleJetPt1000_ZecotekSiPMHO/SingleJetPt1000_ZecotekSiPMHO_Reco/1a4de225bfc658a405ac459d9e14eead/SingleJetPt1000_includeHO_reco_1.root',
-##     '/store/user/andersj/SingleJetPt1000_ZecotekSiPMHO/SingleJetPt1000_ZecotekSiPMHO_Reco/1a4de225bfc658a405ac459d9e14eead/SingleJetPt1000_includeHO_reco_2.root',
-##     '/store/user/andersj/SingleJetPt1000_ZecotekSiPMHO/SingleJetPt1000_ZecotekSiPMHO_Reco/1a4de225bfc658a405ac459d9e14eead/SingleJetPt1000_includeHO_reco_3.root',
-##     '/store/user/andersj/SingleJetPt1000_ZecotekSiPMHO/SingleJetPt1000_ZecotekSiPMHO_Reco/1a4de225bfc658a405ac459d9e14eead/SingleJetPt1000_includeHO_reco_4.root'
 
-##    '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_2.root',
-##    '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_4.root',
-##    '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_6.root',
-##    '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_8.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_10.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_12.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_14.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_16.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_18.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_20.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_1.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_3.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_5.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_7.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_9.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_11.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_13.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_15.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_17.root',
-##     '/store/user/andersj/SinglePionE300_HamamatsuSiPMHO_HcalOnly/SinglePionE300_HamamatsuSiPMHO_HcalOnly_Reco/87d375cd16331b810d688abd73696634/SinglePionE300_reco_19.root'
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(-1)
     )
+
+readFiles = cms.untracked.vstring()
+secFiles = cms.untracked.vstring() 
+
+process.source = cms.Source(
+    "PoolSource", fileNames = readFiles,
+    secondaryFileNames = secFiles,
+    duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
+    )
+
+readFiles.extend( [
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_1.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_2.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_3.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_4.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_5.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_6.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_7.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_8.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_9.root',
+    '/store/user/andersj/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/SingleMum_e_10_60_GEN_SIM_RECO_50fCperMIP/f229d1db935df3676e6e05502ae8f563/SingleMum_e_10_60_GEN_SIM_RECO_10.root'
+   ] )
+
+secFiles.extend( [
+    ] )
+
+process.muons.inputCollectionLabels = cms.VInputTag(
+    cms.InputTag("generalTracks"),
+    cms.InputTag("globalMuonLinks"), 
+    cms.InputTag("standAloneMuons","UpdatedAtVtx"))
+process.muons.inputCollectionTypes = cms.vstring('inner tracks', 
+						 'links', 
+						 'outer tracks')
+
+process.muons.minCaloCompatibility = 0.
+process.muons.minPt = 0.
+process.muons.minP = 0.
+process.muons.minNumberOfMatches = 0
+#process.muons.MuonCaloCompatibility.MuonTemplateFileName = 'RecoMuon/MuonIdentification/data/MuID_templates_muons_barrel_correctedHO_SiPMs.root';
+#process.muons.MuonCaloCompatibility.PionTemplateFileName = 'RecoMuon/MuonIdentification/data/MuID_templates_pions_barrel_correctedHO_SiPMs.root';
+
+process.MuonNumberingInitialization = cms.ESProducer("MuonNumberingInitialization")
+
+process.demo = cms.EDAnalyzer(
+    'HOSiPMAnalysis',
+    outfname = cms.untracked.string("mum_e_10_60_test.root"),
+    #mipE = cms.untracked.double(4.45)
+    mipE = cms.untracked.double(1.0),
+    delta_eta = cms.untracked.double(0.02),
+    delta_phi = cms.untracked.double(0.02),
+    doMuons = cms.untracked.bool(True),
+    TrackAssociatorParameters = TrackAssociatorParameterBlock.TrackAssociatorParameters
 )
 
-process.demo = cms.EDAnalyzer('HOSiPMAnalysis',
-                 outfname = cms.untracked.string("SinglePion1000.root"),
-                 #mipE = cms.untracked.double(4.45)
-                 mipE = cms.untracked.double(1.0),
-                 centralEta = cms.untracked.int32(8),
-                 centralPhi = cms.untracked.int32(2)
-                              
-)
 
-
-process.p = cms.Path(process.demo)
+process.p = cms.Path(process.globalMuonLinks*process.muons*process.demo)
