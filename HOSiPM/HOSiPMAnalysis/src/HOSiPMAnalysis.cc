@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Sep  3 09:02:21 CDT 2009
-// $Id: HOSiPMAnalysis.cc,v 1.1 2010/03/26 16:02:15 andersj Exp $
+// $Id: HOSiPMAnalysis.cc,v 1.2 2010/04/08 15:59:16 andersj Exp $
 //
 //
 
@@ -96,6 +96,7 @@ private:
   double genHOphi;
   int genAccept;
   int genHitDeadChannel;
+  int genSiPM;
   double assocSimE;
   double sumsimhits;
   double muonHOE;
@@ -109,6 +110,7 @@ private:
   double hophi;
   int muAccept;
   int muHitDeadChannel;
+  int muSiPM;
   double muEta;
   double muPhi;
   double mup;
@@ -184,12 +186,14 @@ HOSiPMAnalysis::HOSiPMAnalysis(const edm::ParameterSet& iConfig) :
   hohits->Branch("genAccept", &genAccept, "genAccept/I");
   hohits->Branch("genHitDeadChannel", &genHitDeadChannel, 
 		 "genHitDeadChannel/I");
+  hohits->Branch("genSiPM", &genSiPM, "genSiPM/I");
   hohits->Branch("assocSimE", &assocSimE, "assocSimE/D");
   hohits->Branch("hoeta", &hoeta, "hoeta/D");
   hohits->Branch("hophi", &hophi, "hophi/D");
   hohits->Branch("muAccept", &muAccept, "muAccept/I");
   hohits->Branch("muHitDeadChannel", &muHitDeadChannel, 
 		 "muHitDeadChannel/I");
+  hohits->Branch("muSiPM", &muSiPM, "muSiPM/I");
   hohits->Branch("muonEta", &muonEta, "muonEta/I");
   hohits->Branch("muonPhi", &muonPhi, "muonPhi/I");
   hohits->Branch("muonHOE", &muonHOE, "muonHOE/D");
@@ -231,6 +235,8 @@ void
 HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
+
+  if (!HcalAcceptanceId::Inited()) HcalAcceptanceId::initIds(iSetup);
 
   Handle<reco::GenParticleCollection> genparts;
   iEvent.getByType(genparts);
@@ -297,9 +303,12 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   genAccept = 0;
   if (HcalAcceptanceId::inGeomAccept(genHOeta,genHOphi,deta,dphi)) 
     genAccept += 1;
-  if (HcalAcceptanceId::isNotDeadGeom(genHOeta,genHOphi,deta,dphi))
+  if (HcalAcceptanceId::inNotDeadGeom(genHOeta,genHOphi,deta,dphi))
     genAccept += 10;
+  if (HcalAcceptanceId::inSiPMGeom(genHOeta,genHOphi,deta,dphi))
+    genAccept += 100;
   genHitDeadChannel = 0;
+  genSiPM = 0;
   for (hitsum = homap.begin(); hitsum != homap.end(); ++hitsum) {
     HcalDetId tmpId(hitsum->first);
     if (tmpId.subdet() == HcalOuter) {
@@ -313,6 +322,7 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	maxPhi = tmpId.iphi();
       }
       if (HcalAcceptanceId::isChannelDead(tmpId)) ++genHitDeadChannel;
+      if (HcalAcceptanceId::isChannelSiPM(tmpId)) ++genSiPM;
     }
   }
   
@@ -374,9 +384,12 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  muAccept = 0;
 	  if (HcalAcceptanceId::inGeomAccept(hoeta, hophi, deta, dphi)) 
 	    muAccept += 1;
-	  if (HcalAcceptanceId::isNotDeadGeom(hoeta, hophi, deta, dphi)) 
+	  if (HcalAcceptanceId::inNotDeadGeom(hoeta, hophi, deta, dphi)) 
 	    muAccept += 10;
+	  if (HcalAcceptanceId::inSiPMGeom(hoeta, hophi, deta, dphi)) 
+	    muAccept += 100;
 	  muHitDeadChannel = 0;
+	  muSiPM = 0;
 	  NHOChan = 0;
 	  maxmuE = 0.;
 	  muonEta = 0;
@@ -388,6 +401,7 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    HcalDetId mId(aid->rawId());
 	    ++NHOChan;
 	    if (HcalAcceptanceId::isChannelDead(mId)) ++muHitDeadChannel;
+	    if (HcalAcceptanceId::isChannelSiPM(mId)) ++muSiPM;
 	    if ( (!HcalAcceptanceId::isChannelDead(mId)) && (muonEta==0) ) {
 	      muonEta = mId.ieta();
 	      muonPhi = mId.iphi();

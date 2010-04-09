@@ -9,6 +9,7 @@
 <use name=SimDataFormats/CaloTest>
 <use name=DataFormats/MuonReco>
 <use name=TrackingTools/TrackAssociator>
+<use Name=RecoLocalCalo/HcalRecAlgos>
 <use name=root>
 <use name=roofit>
 <use name=rootcore>

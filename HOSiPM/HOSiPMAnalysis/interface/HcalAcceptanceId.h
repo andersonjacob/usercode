@@ -1,19 +1,27 @@
 // -*- C++ -*-
 #include <vector>
+#include <list>
 #include <stdint.h>
+#include "FWCore/Framework/interface/EventSetup.h"
+
+class TMultiGraph;
 
 class HcalAcceptanceId {
  public:
   static bool isChannelDead(uint32_t id);
+  static bool isChannelSiPM(uint32_t id);
   static bool inGeomAccept(double eta, double phi, double delta_eta = 0.,
 			   double delta_phi = 0.);
-  static bool isNotDeadGeom(double eta, double phi, double delta_eta = 0.,
+  static bool inNotDeadGeom(double eta, double phi, double delta_eta = 0.,
 			    double delta_phi = 0.);
-  static void initDeadIds();
+  static bool inSiPMGeom(double eta, double phi, double delta_eta = 0.,
+			 double delta_phi = 0.);
+  static void initIds(edm::EventSetup const& eSetup);
+  static bool Inited() { return inited; }
+  static TMultiGraph * graphDeadRegions() { return graphRegions(deadRegions); }
+  static TMultiGraph * graphSiPMRegions() { return graphRegions(SiPMRegions); }
 
  private:
-
-  static void buildDeadAreas();
 
   struct deadRegion {
     deadRegion( double eMin = 0., double eMax = 0., 
@@ -63,8 +71,17 @@ class HcalAcceptanceId {
     void merge (deadIdRegion const& other);
   };
 
+  static void buildDeadAreas();
+  static void buildSiPMAreas();
+  static void mergeRegionLists(std::list<deadIdRegion>& didregions);
+  static void convertRegions(std::list<deadIdRegion> const& idregions,
+			     std::vector<deadRegion>& regions);
+  static TMultiGraph * graphRegions(std::vector<deadRegion> const& regions);
+
   static std::vector<uint32_t> deadIds;
   static std::vector<deadRegion> deadRegions;
+  static std::vector<uint32_t> SiPMIds;
+  static std::vector<deadRegion> SiPMRegions;
   static bool inited;
   static int const etaBounds;
   static double const etaMin[];
