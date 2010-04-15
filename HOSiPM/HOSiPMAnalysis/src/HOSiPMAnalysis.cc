@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Sep  3 09:02:21 CDT 2009
-// $Id: HOSiPMAnalysis.cc,v 1.3 2010/04/09 18:31:55 andersj Exp $
+// $Id: HOSiPMAnalysis.cc,v 1.4 2010/04/15 14:53:28 andersj Exp $
 //
 //
 
@@ -101,6 +101,7 @@ private:
   double sumsimhits;
   double muonHOE;
   double muonHOES9;
+  double muonHOmax;
   int Nmu;
   int NHOChan;
   double assocMuSimE;
@@ -198,6 +199,7 @@ HOSiPMAnalysis::HOSiPMAnalysis(const edm::ParameterSet& iConfig) :
   hohits->Branch("muonPhi", &muonPhi, "muonPhi/I");
   hohits->Branch("muonHOE", &muonHOE, "muonHOE/D");
   hohits->Branch("muonHOES9", &muonHOES9, "muonHOES9/D");
+  hohits->Branch("muonHOmax", &muonHOmax, "muonHOmax/D");
   hohits->Branch("muEta", &muEta, "muEta/D");
   hohits->Branch("muPhi", &muPhi, "muPhi/D");
   hohits->Branch("mup", &mup, "mup/D");
@@ -371,6 +373,7 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if (muonHOE == 0) {
 	muonHOE = muon->calEnergy().ho;
 	muonHOES9 = muon->calEnergy().hoS9;
+	muonHOmax = muon->calEnergy().hoMax;
 	if (! muon->track().isNull() ) {
 	  reco::Track const * track = muon->track().get();
 	  muMatch = new TrackDetMatchInfo(assoc.associate(iEvent,iSetup,
