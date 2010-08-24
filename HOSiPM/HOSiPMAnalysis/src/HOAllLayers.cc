@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Sep  3 09:02:21 CDT 2009
-// $Id: HOAllLayers.cc,v 1.1 2010/03/26 16:02:15 andersj Exp $
+// $Id: HOAllLayers.cc,v 1.2 2010/08/02 18:45:27 andersj Exp $
 //
 //
 
@@ -39,11 +39,16 @@
 
 #include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
 #include "DataFormats/HcalDigi/interface/HBHEDataFrame.h"
+#include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
+#include "DataFormats/CaloTowers/interface/CaloTowerCollection.h"
 
 #include "DataFormats/CaloTowers/interface/CaloTowerCollection.h"
 // #include "TrackingTools/TrackAssociator/interface/TrackDetectorAssociator.h"
 
 #include "DataFormats/HcalDetId/interface/HcalSubdetector.h"
+
+#include "DataFormats/JetReco/interface/CaloJetCollection.h"
+#include "DataFormats/JetReco/interface/GenJetCollection.h"
 
 #include "TH1.h"
 #include "TFile.h"
@@ -90,6 +95,7 @@ private:
   // ----------member data ---------------------------
   TString outfname;
   TTree * hohits;
+  TTree * jetTree;
   TFile * outf;
   int maxEta;
   int maxPhi;
@@ -103,7 +109,9 @@ private:
   double genpt;
   int isSig;
   double mipE;
+  double HOThreshold;
   bool doFit;
+  bool doJets;
   int centralEta;
   int centralPhi;
   double nominal_fC[depths];
@@ -130,6 +138,33 @@ private:
   double ped_ho_fC16;
   double ped_ho_fC25;
   double ped_ho_fC144;
+  double HB_E;
+  double HB_E4;
+  double HB_E9;
+  double HB_E25;
+  double HB_E49;
+  double HB_E81;
+  double EB_E;
+  double EB_E4;
+  double EB_E9;
+  double EB_E25;
+  double EB_E49;
+  double EB_E81;
+  double HO_E;
+  double HO_E_ped;
+  double HO_E4;
+  double HO_E9;
+  double HO_E25;
+  double HO_E49;
+  double HO_E81;
+
+  double genJetEta, genJetPhi, genJetmass, genJetEt, genJetenergy, 
+    genJetpt, genJetemEnergy, genJethadEnergy;
+  double caloJetEta, caloJetPhi, caloJetmass, caloJetEt, caloJetenergy, 
+    caloJetpt, caloJetemEnergy, caloJethadEnergy, caloJetouterEnergy;
+  double caloJetWithHOEta, caloJetWithHOPhi, caloJetWithHOmass, 
+    caloJetWithHOEt, caloJetWithHOenergy, caloJetWithHOpt, 
+    caloJetWithHOemEnergy, caloJetWithHOhadEnergy, caloJetWithHOouterEnergy;
 
   bool doMuons;
   bool findCenter;
@@ -195,7 +230,9 @@ HOAllLayers::HOAllLayers(const edm::ParameterSet& iConfig) :
 						      "HOSiPMMuons.root")),
   outf(0), isSig(1),
   mipE(iConfig.getUntrackedParameter<double>("mipE", 1.)),
+  HOThreshold(iConfig.getUntrackedParameter<double>("HOThreshold", -100.)),
   doFit(iConfig.getUntrackedParameter<bool>("doFit", false)),
+  doJets(iConfig.getUntrackedParameter<bool>("doJets", false)),
   centralEta(iConfig.getUntrackedParameter<int>("centralEta", 0)),
   centralPhi(iConfig.getUntrackedParameter<int>("centralPhi", -1)),
   doMuons(iConfig.getUntrackedParameter<bool>("doMuons", false)),
@@ -244,8 +281,67 @@ HOAllLayers::HOAllLayers(const edm::ParameterSet& iConfig) :
   hohits->Branch("ped_ho_fC16", &ped_ho_fC16, "ho_fC16/D");
   hohits->Branch("ped_ho_fC25", &ped_ho_fC25, "ho_fC25/D");
   hohits->Branch("ped_ho_fC144", &ped_ho_fC144, "ho_fC144/D");
-}
+  hohits->Branch("HB_E", &HB_E, "HB_E/D");
+  hohits->Branch("HB_E4", &HB_E4, "HB_E4/D");
+  hohits->Branch("HB_E9", &HB_E9, "HB_E9/D");
+  hohits->Branch("HB_E25", &HB_E25, "HB_E25/D");
+  hohits->Branch("HB_E49", &HB_E49, "HB_E49/D");
+  hohits->Branch("HB_E81", &HB_E81, "HB_E81/D");
+  hohits->Branch("EB_E", &EB_E, "EB_E/D");
+  hohits->Branch("EB_E4", &EB_E4, "EB_E4/D");
+  hohits->Branch("EB_E9", &EB_E9, "EB_E9/D");
+  hohits->Branch("EB_E25", &EB_E25, "EB_E25/D");
+  hohits->Branch("EB_E49", &EB_E49, "EB_E49/D");
+  hohits->Branch("EB_E81", &EB_E81, "EB_E81/D");
+  hohits->Branch("HO_E", &HO_E, "HO_E/D");
+  hohits->Branch("HO_E_ped", &HO_E_ped, "HO_E_ped/D");
+  hohits->Branch("HO_E4", &HO_E4, "HO_E4/D");
+  hohits->Branch("HO_E9", &HO_E9, "HO_E9/D");
+  hohits->Branch("HO_E25", &HO_E25, "HO_E25/D");
+  hohits->Branch("HO_E49", &HO_E49, "HO_E49/D");
+  hohits->Branch("HO_E81", &HO_E81, "HO_E81/D");
 
+  jetTree = 0;
+  if (doJets) {
+    jetTree = new TTree("jetTree", "jetTree");
+    jetTree->Branch("genJetEta", &genJetEta, "genJetEta/D");
+    jetTree->Branch("genJetPhi", &genJetPhi, "genJetPhi/D");
+    jetTree->Branch("genJetmass", &genJetmass, "genJetmass/D");
+    jetTree->Branch("genJetEt", &genJetEt, "genJetEt/D");
+    jetTree->Branch("genJetenergy", &genJetenergy, "genJetenergy/D");
+    jetTree->Branch("genJetpt", &genJetpt, "genJetpt/D");
+    jetTree->Branch("genJetemEnergy", &genJetemEnergy, "genJetemEnergy/D");
+    jetTree->Branch("genJethadEnergy", &genJethadEnergy, "genJethadEnergy/D");
+    jetTree->Branch("caloJetEta", &caloJetEta, "caloJetEta/D");
+    jetTree->Branch("caloJetPhi", &caloJetPhi, "caloJetPhi/D");
+    jetTree->Branch("caloJetmass", &caloJetmass, "caloJetmass/D");
+    jetTree->Branch("caloJetEt", &caloJetEt, "caloJetEt/D");
+    jetTree->Branch("caloJetenergy", &caloJetenergy, "caloJetenergy/D");
+    jetTree->Branch("caloJetpt", &caloJetpt, "caloJetpt/D");
+    jetTree->Branch("caloJetemEnergy", &caloJetemEnergy, "caloJetemEnergy/D");
+    jetTree->Branch("caloJethadEnergy", &caloJethadEnergy, 
+		    "caloJethadEnergy/D");
+    jetTree->Branch("caloJetouterEnergy", &caloJetouterEnergy, 
+		    "caloJetouterEnergy/D");
+    jetTree->Branch("caloJetWithHOEta", &caloJetWithHOEta, 
+		    "caloJetWithHOEta/D");
+    jetTree->Branch("caloJetWithHOPhi", &caloJetWithHOPhi, 
+		    "caloJetWithHOPhi/D");
+    jetTree->Branch("caloJetWithHOmass", &caloJetWithHOmass, 
+		    "caloJetWithHOmass/D");
+    jetTree->Branch("caloJetWithHOEt", &caloJetWithHOEt, "caloJetWithHOEt/D");
+    jetTree->Branch("caloJetWithHOenergy", &caloJetWithHOenergy, 
+		    "caloJetWithHOenergy/D");
+    jetTree->Branch("caloJetWithHOpt", &caloJetWithHOpt, "caloJetWithHOpt/D");
+    jetTree->Branch("caloJetWithHOemEnergy", &caloJetWithHOemEnergy, 
+		    "caloJetWithHOemEnergy/D");
+    jetTree->Branch("caloJetWithHOhadEnergy", &caloJetWithHOhadEnergy, 
+		    "caloJetWithHOhadEnergy/D");
+    jetTree->Branch("caloJetWithHOouterEnergy", &caloJetWithHOouterEnergy, 
+		    "caloJetWithHOouterEnergy/D");
+    
+  }
+}
 
 HOAllLayers::~HOAllLayers()
 {
@@ -307,7 +403,7 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					 phi, layer);
     } else {
       HcalDetId tmpId(simhit->id());
-      det = tmpId.subdet();
+      det = tmpId.subdetId();
       z = (tmpId.zside()>0) ? 1 : 0;
       depth = tmpId.depth();
       eta = tmpId.ietaAbs();
@@ -389,7 +485,7 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 					 phi, layer);
     } else {
       HcalDetId tmpId(hitsum->first);
-      det = tmpId.subdet();
+      det = tmpId.subdetId();
       z = (tmpId.zside()>0) ? 1 : 0;
       depth = tmpId.depth();
       eta = tmpId.ietaAbs();
@@ -403,18 +499,6 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   }
 
-  Handle<HBHEDigiCollection> hbhedigis;
-  iEvent.getByLabel("simHcalUnsuppressedDigis", hbhedigis);
-  if (!hbhedigis.isValid()) {
-    hohits->Fill();
-    std::cout << "no digis." << std::endl;
-    return;
-  }
-  HBHEDigiCollection::const_iterator digi;
-
-  double sum;
-  int linearEta, deta, dphi;
-  int const samples = 4;
   for (int i = 0; i<depths; ++i) {
     nominal_fC[i] = 0.;
     nominal_fC4[i] = 0.;
@@ -429,6 +513,52 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     ped_nominal_fC25[i] = 0.;
     ped_nominal_fC144[i] = 0.;
   }
+
+  ho_fC = 0.;
+  ho_fC4 = 0.;
+  ho_fC9 = 0.;
+  ho_fC16 = 0.;
+  ho_fC25 = 0.;
+  ho_fC144 = 0.;
+  ped_ho_fC = 0.;
+  ped_ho_fC4 = 0.;
+  ped_ho_fC9 = 0.;
+  ped_ho_fC16 = 0.;
+  ped_ho_fC25 = 0.;
+  ped_ho_fC144 = 0.;
+
+  HB_E = 0.;
+  HO_E = 0.;
+  EB_E = 0.;
+  HB_E4 = 0.;
+  HO_E4 = 0.;
+  EB_E4 = 0.;
+  HB_E9 = 0.;
+  HO_E9 = 0.;
+  EB_E9 = 0.;
+  HB_E25 = 0.;
+  HO_E25 = 0.;
+  EB_E25 = 0.;
+  HB_E49 = 0.;
+  HO_E49 = 0.;
+  EB_E49 = 0.;
+  HB_E81 = 0.;
+  HO_E81 = 0.;
+  EB_E81 = 0.;
+  HO_E_ped = 0.;
+
+  Handle<HBHEDigiCollection> hbhedigis;
+  iEvent.getByLabel("simHcalUnsuppressedDigis", hbhedigis);
+  if (!hbhedigis.isValid()) {
+    hohits->Fill();
+    std::cout << "no digis." << std::endl;
+    return;
+  }
+  HBHEDigiCollection::const_iterator digi;
+
+  double sum;
+  int linearEta, deta, dphi;
+  int const samples = 4;
   if (centralEta < 0) ++centralEta;
   for (digi = hbhedigis->begin(); digi != hbhedigis->end(); ++digi) {
     sum = 0.;
@@ -464,8 +594,8 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       } // 5x5 group
       nominal_fC144[digi->id().depth()] += sum;
     } // 12x12 group
-    deta = -3 - linearEta;
-    dphi = 36 - digi->id().iphi();
+    deta = -1*centralEta - linearEta;
+    dphi = 72 - centralPhi - digi->id().iphi();
     if (dphi > 35) {
       dphi -= 72;
     } else if (dphi < -36) {
@@ -501,18 +631,6 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
   HODigiCollection::const_iterator hodigi;
 
-  ho_fC = 0.;
-  ho_fC4 = 0.;
-  ho_fC9 = 0.;
-  ho_fC16 = 0.;
-  ho_fC25 = 0.;
-  ho_fC144 = 0.;
-  ped_ho_fC = 0.;
-  ped_ho_fC4 = 0.;
-  ped_ho_fC9 = 0.;
-  ped_ho_fC16 = 0.;
-  ped_ho_fC25 = 0.;
-  ped_ho_fC144 = 0.;
   for (hodigi = hodigis->begin(); hodigi != hodigis->end(); ++hodigi) {
     sum = 0.;
     for (int i = hodigi->presamples(); 
@@ -546,8 +664,8 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       } // 5x5 group
       ho_fC144 += sum;
     } // 12x12 group
-    deta = -3 - linearEta;
-    dphi = 36 - hodigi->id().iphi();
+    deta = -1*centralEta - linearEta;
+    dphi = 72 - centralPhi - hodigi->id().iphi();
     if (dphi > 35) {
       dphi -= 72;
     } else if (dphi < -36) {
@@ -575,7 +693,182 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
 //   SumSimHits->Fill(sumsimhits);
 
+  // edm::Handle<HBHERecHitCollection> hbherh;  
+  // iEvent.getByLabel("hbhereco",hbherh);
+  // if (!hbherh.isValid()) {
+  //   std::cout << "no hbhe rechits" << std::endl;
+  //   hohits->Fill();
+  //   return;
+  // }
+
+  edm::Handle<HORecHitCollection> horh;
+  iEvent.getByLabel("horeco",horh);
+  if (!horh.isValid()) {
+    std::cout << "no ho rechits" << std::endl;
+    hohits->Fill();
+    return;
+  }
+
+  HORecHitCollection::const_iterator hit;
+  for (hit = horh->begin(); hit != horh->end(); ++hit) {
+    HcalDetId tmpId(hit->id().rawId());
+    linearEta = (tmpId.ieta() < 0) ? 
+      tmpId.ieta()+1 : tmpId.ieta();
+    deta = centralEta - linearEta;
+    dphi = centralPhi - tmpId.iphi();
+    if (dphi > 35) {
+      dphi -= 72;
+    } else if (dphi < -36) {
+      dphi += 72;
+    }
+    if ( (deta < 5) && (deta > -5) && (dphi < 5) && (dphi > -5) ) {   
+      if ( (deta < 4) && (deta > -4) && (dphi < 4) && (dphi > -4) ) {   
+	if ( (deta < 3) && (deta > -3) && (dphi < 3) && (dphi > -3) ) {   
+	  if ( (deta < 2) && (deta > -2) && (dphi < 2) && (dphi > -2) ) {
+	    if ( (deta < 1) && (deta > -2) && (dphi < 1) && (dphi > -2) ) {
+	      if ( (deta < 1) && (dphi > -1) && (dphi < 1) && (dphi > -1) ) {
+		HO_E += hit->energy();
+	      } // 1x1 gourp
+	      if (hit->energy() > HOThreshold)
+		HO_E4 += hit->energy();
+	    } // 2x2 group
+	    if (hit->energy() > HOThreshold)
+	      HO_E9 += hit->energy();
+	  } // 3x3 group
+	  if (hit->energy() > HOThreshold)
+	    HO_E25 += hit->energy();
+	} // 5x5 group
+	if (hit->energy() > HOThreshold)
+	  HO_E49 += hit->energy();
+      } // 7x7 group
+      if (hit->energy() > HOThreshold)
+	HO_E81 += hit->energy();
+    } // 9x9 group
+    if ((tmpId.ieta()==-1*centralEta) && (tmpId.iphi()==72-centralPhi)) {
+      HO_E_ped += hit->energy();
+    }
+  }
+
+  Handle<CaloTowerCollection> towers;
+  iEvent.getByLabel("towerMaker", towers);
+  if (!towers.isValid()) {
+    std::cout << "no caloTowers" << std::endl;
+    hohits->Fill();
+    return;
+  }
+  CaloTowerCollection::const_iterator ctower;
+  for (ctower = towers->begin(); ctower != towers->end(); ++ctower) {
+    linearEta = (ctower->ieta() < 0) ? 
+      ctower->ieta()+1 : ctower->ieta();
+    deta = centralEta - linearEta;
+    dphi = centralPhi - ctower->iphi();
+    if (dphi > 35) {
+      dphi -= 72;
+    } else if (dphi < -36) {
+      dphi += 72;
+    }
+    if ( (deta < 5) && (deta > -5) && (dphi < 5) && (dphi > -5) ) {
+      if ( (deta < 4) && (deta > -4) && (dphi < 4) && (dphi > -4) ) {
+	if ( (deta < 3) && (deta > -3) && (dphi < 3) && (dphi > -3) ) {
+	  if ( (deta < 2) && (deta > -2) && (dphi < 2) && (dphi > -2) ) {
+	    if ( (deta < 1) && (deta > -2) && (dphi < 1) && (dphi > -2) ) {
+	      if ( (deta < 1) && (dphi > -1) && (dphi < 1) && (dphi > -1) ) {
+		HB_E += ctower->hadEnergy();
+		EB_E += ctower->emEnergy();
+	      } // 1x1 group
+	      HB_E4 += ctower->hadEnergy();
+	      EB_E4 += ctower->emEnergy();
+	    } // 2x2 group
+	    HB_E9 += ctower->hadEnergy();
+	    EB_E9 += ctower->emEnergy();
+	  } // 3x3 group
+	  HB_E25 += ctower->hadEnergy();
+	  EB_E25 += ctower->emEnergy();
+	} // 5x5 group
+	HB_E49 += ctower->hadEnergy();
+	EB_E49 += ctower->emEnergy();
+      } // 7x7 group
+      HB_E81 += ctower->hadEnergy();
+      EB_E81 += ctower->emEnergy();
+    } // 9x9 group
+  }
+
   hohits->Fill();
+  std::cout.flush();
+
+  if (!doJets) return;
+
+  genJetpt = -10.;
+  caloJetpt = -10.;
+  caloJetWithHOpt = -10.;
+
+  Handle<reco::GenJetCollection> ak7GenJets;
+  iEvent.getByLabel("ak7GenJets", ak7GenJets);
+  if (!ak7GenJets.isValid()) {
+    std::cout << "no gen jets" << std::endl;
+    return;
+  }
+
+  reco::GenJetCollection::const_iterator genJet;
+  for (genJet = ak7GenJets->begin(); genJet != ak7GenJets->end(); ++genJet) {
+    if (genJet->pt() > genJetpt) {
+      genJetEta = genJet->eta();
+      genJetPhi = genJet->phi();
+      genJetmass = genJet->mass();
+      genJetEt = genJet->et();
+      genJetenergy = genJet->energy();
+      genJetpt = genJet->pt();
+      genJetemEnergy = genJet->emEnergy();
+      genJethadEnergy = genJet->hadEnergy();
+    }
+  }
+
+  Handle<reco::CaloJetCollection> ak7CaloJets;
+  iEvent.getByLabel("ak7CaloJets", ak7CaloJets);
+  if (!ak7CaloJets.isValid()) {
+    std::cout << "no calo jets" << std::endl;
+    return;
+  }
+
+  reco::CaloJetCollection::const_iterator caloJet;
+  for (caloJet = ak7CaloJets->begin(); caloJet != ak7CaloJets->end(); 
+       ++caloJet) {
+    if (caloJet->pt() > caloJetpt) {
+      caloJetEta = caloJet->eta();
+      caloJetPhi = caloJet->phi();
+      caloJetmass = caloJet->mass();
+      caloJetEt = caloJet->et();
+      caloJetenergy = caloJet->energy();
+      caloJetpt = caloJet->pt();
+      caloJetemEnergy = caloJet->emEnergyInEB();
+      caloJethadEnergy = caloJet->hadEnergyInHB();
+      caloJetouterEnergy = caloJet->hadEnergyInHO();
+    }
+  }
+
+  Handle<reco::CaloJetCollection> ak7CaloJetsWithHO;
+  iEvent.getByLabel("ak7CaloJetsWithHO", ak7CaloJetsWithHO);
+  if (!ak7CaloJetsWithHO.isValid()) {
+    std::cout << "no calo jets with HO" << std::endl;
+    return;
+  }
+  
+  for (caloJet = ak7CaloJetsWithHO->begin(); 
+       caloJet != ak7CaloJetsWithHO->end(); ++caloJet) {
+    if (caloJet->pt() > caloJetWithHOpt) {
+      caloJetWithHOEta = caloJet->eta();
+      caloJetWithHOPhi = caloJet->phi();
+      caloJetWithHOmass = caloJet->mass();
+      caloJetWithHOEt = caloJet->et();
+      caloJetWithHOenergy = caloJet->energy();
+      caloJetWithHOpt = caloJet->pt();
+      caloJetWithHOemEnergy = caloJet->emEnergyInEB();
+      caloJetWithHOhadEnergy = caloJet->hadEnergyInHB();
+      caloJetWithHOouterEnergy = caloJet->hadEnergyInHO();
+    }
+  }
+
+  jetTree->Fill();
   std::cout.flush();
 }
 
