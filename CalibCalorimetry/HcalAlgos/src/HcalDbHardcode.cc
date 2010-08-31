@@ -27,9 +27,9 @@ HcalPedestal HcalDbHardcode::makePedestal (HcalGenericDetId fId, bool fSmear) {
 
 HcalPedestalWidth HcalDbHardcode::makePedestalWidth (HcalGenericDetId fId) {
   float value = 0;
-  if (fId.genericSubdet() == HcalGenericDetId::HcalGenBarrel) value = 2.0;
-  else if (fId.genericSubdet() == HcalGenericDetId::HcalGenOuter) value = 0.7;
-  else if (fId.genericSubdet() == HcalGenericDetId::HcalGenEndcap) value = 2.0;
+  if (fId.genericSubdet() == HcalGenericDetId::HcalGenBarrel) value = 5.0;
+  else if (fId.genericSubdet() == HcalGenericDetId::HcalGenOuter) value = 1.5;
+  else if (fId.genericSubdet() == HcalGenericDetId::HcalGenEndcap) value = 5.0;
   else if (fId.genericSubdet() == HcalGenericDetId::HcalGenForward) value = 2.0;  // everything in fC
 
   HcalPedestalWidth result (fId.rawId ());
@@ -59,7 +59,7 @@ HcalGain HcalDbHardcode::makeGain (HcalGenericDetId fId, bool fSmear) {
     else value0 = 0.003333; // GeV/fC
     // if (fId.genericSubdet() != HcalGenericDetId::HcalGenForward) value0 = 0.177;  // GeV/fC
   } else if (fId.genericSubdet() == HcalGenericDetId::HcalGenOuter) {
-    value0 = 0.005;  // GeV/fC
+    value0 = 0.02667;  // GeV/fC
   } else if (fId.genericSubdet() == HcalGenericDetId::HcalGenForward) {
     if (HcalDetId(fId).depth() == 1) value0 = 0.2146;
     else if (HcalDetId(fId).depth() == 2) value0 = 0.3375;
