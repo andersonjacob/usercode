@@ -16,5 +16,5 @@
 <use name=rootcore>
 <flags EDM_PLUGIN=1>
 <export>
-   <lib name=HOSiPMHOSiPMAnalysis>
+   #<lib name=HOSiPMHOSiPMAnalysis>
 </export>

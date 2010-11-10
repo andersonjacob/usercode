@@ -12,7 +12,7 @@ process.source = cms.Source ("PoolSource",fileNames = readFiles,
                              secondaryFileNames = secFiles)
 
 readFiles.extend( [
-    "file:/uscms_data/d1/andersj/upgradeMuons/digi_1_5.root",
+    "file:/uscms_data/d1/andersj/HO/SingleMuE100_3_3_GEN_SIM_RECO.root",
     #"file:/uscms_data/d1/andersj/upgradeMuons/digi_2_5.root"
  ] )
 
@@ -24,10 +24,11 @@ process.demo = cms.EDAnalyzer(
     'HOAllLayers',
     outfname = cms.untracked.string("mu100.root"),
     centralEta = cms.untracked.int32(3),
-    centralPhi = cms.untracked.int32(1),
+    centralPhi = cms.untracked.int32(3),
     findCenter = cms.untracked.bool(False),
-    #mipE = cms.untracked.double(4.45)
-    doFit = cms.untracked.bool(False)
+    #mipE = cms.untracked.double(4.45),
+    doFit = cms.untracked.bool(False),
+    testNumbering = cms.untracked.bool(False)
     )
 
 process.p = cms.Path(process.demo)
