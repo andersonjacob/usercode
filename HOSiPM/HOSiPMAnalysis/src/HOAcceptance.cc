@@ -1,4 +1,4 @@
-#include "../interface/MuonHOAcceptance.h"
+#include "HOSiPM/HOSiPMAnalysis/interface/HOAcceptance.h"
 
 #include <iostream>
 #include <algorithm>
@@ -18,70 +18,72 @@
 
 #include "FWCore/Framework/interface/ESHandle.h"
 
-std::vector<uint32_t> MuonHOAcceptance::deadIds;
-std::vector<MuonHOAcceptance::deadRegion> MuonHOAcceptance::deadRegions;
-std::vector<uint32_t> MuonHOAcceptance::SiPMIds;
-std::vector<MuonHOAcceptance::deadRegion> MuonHOAcceptance::SiPMRegions;
-bool MuonHOAcceptance::inited = false;
-int const MuonHOAcceptance::etaBounds = 5;
-double const MuonHOAcceptance::etaMin[etaBounds] = 
+static int const etaBounds = 5;
+static int const phiSectors = 12;
+static double const etaMin[etaBounds] = 
   //{-1.262, -0.861, -0.307, 0.341, 0.885};
   {-1.2544, -0.8542, -0.3017, 0.3425, 0.8796};
-double const MuonHOAcceptance::etaMax[etaBounds] = 
+static double const etaMax[etaBounds] = 
   //{-0.885, -0.341,  0.307, 0.861, 1.262};
   {-0.8796, -0.3425,  0.3017, 0.8542, 1.2544};
-double const MuonHOAcceptance::twopi = 2.*3.14159265358979323846;
-int const MuonHOAcceptance::phiSectors = 12;
-double const MuonHOAcceptance::phiMinR0[phiSectors] = {-0.16172,
-						        0.3618786,
-						        0.8854773,
-						        1.409076116,
-						        1.932674892,
-						        2.456273667,
-						        2.979872443,
-						        3.503471219,
-						        4.027069994,
-						        4.55066877,
-						        5.074267545,
-						        5.597866321 };
-double const MuonHOAcceptance::phiMaxR0[phiSectors] = { 0.317395374,
-							0.84099415,
-							1.364592925,
-							1.888191701,
-							2.411790477,
-							2.935389252,
-							3.458988028,
-							3.982586803,
-							4.506185579,
-							5.029784355,
-							5.55338313,
-							6.076981906 };
-double const MuonHOAcceptance::phiMinR12[phiSectors] = {-0.166264081,
-							 0.357334694,
-							 0.88093347,
-							 1.404532245,
-							 1.928131021,
-							 2.451729797,
-							 2.975328572,
-							 3.498927348,
-							 4.022526123,
-							 4.546124899,
-							 5.069723674,
-							 5.59332245 };
-double const MuonHOAcceptance::phiMaxR12[phiSectors] = { 0.34398862,
-							 0.867587396,
-							 1.391186172,
-							 1.914784947,
-							 2.438383723,
-							 2.961982498,
-							 3.485581274,
-							 4.00918005,
-							 4.532778825,
-							 5.056377601,
-							 5.579976376,
-							 6.103575152 };
+static double const phiMinR0[phiSectors] = {-0.16172,
+					    0.3618786,
+					    0.8854773,
+					    1.409076116,
+					    1.932674892,
+					    2.456273667,
+					    2.979872443,
+					    3.503471219,
+					    4.027069994,
+					    4.55066877,
+					    5.074267545,
+					    5.597866321 };
+static double const phiMaxR0[phiSectors] = { 0.317395374,
+					     0.84099415,
+					     1.364592925,
+					     1.888191701,
+					     2.411790477,
+					     2.935389252,
+					     3.458988028,
+					     3.982586803,
+					     4.506185579,
+					     5.029784355,
+					     5.55338313,
+					     6.076981906 };
+static double const phiMinR12[phiSectors] = {-0.166264081,
+					     0.357334694,
+					     0.88093347,
+					     1.404532245,
+					     1.928131021,
+					     2.451729797,
+					     2.975328572,
+					     3.498927348,
+					     4.022526123,
+					     4.546124899,
+					     5.069723674,
+					     5.59332245 };
+static double const phiMaxR12[phiSectors] = { 0.34398862,
+					      0.867587396,
+					      1.391186172,
+					      1.914784947,
+					      2.438383723,
+					      2.961982498,
+					      3.485581274,
+					      4.00918005,
+					      4.532778825,
+					      5.056377601,
+					      5.579976376,
+					      6.103575152 };
 
-bool MuonHOAcceptance::isChannelDead(uint32_t id) {
+HOAcceptance::HOAcceptance() :
+  deadIds(6), deadRegions(3), SiPMIds(132), SiPMRegions(2), inited(false), 
+  twopi(2.*3.14159265358979323846)/*, etaBounds(etaRegions), 
+  phiSectors(phiRegions), etaMin(etaBounds), etaMax(etaBounds), 
+  phiMinR0(phiSectors), phiMaxR0(phiSectors), phiMinR12(phiSectors), 
+  phiMaxR12(phiSectors)*/ {
+}
+
+bool HOAcceptance::isChannelDead(uint32_t id) {
   if (!inited) return false;
   std::vector<uint32_t>::const_iterator found = 
     std::find(deadIds.begin(), deadIds.end(), id);
@@ -89,7 +91,7 @@ bool MuonHOAcceptance::isChannelDead(uint32_t id) {
   else return false;
 }
 
-bool MuonHOAcceptance::isChannelSiPM(uint32_t id) {
+bool HOAcceptance::isChannelSiPM(uint32_t id) {
   if (!inited) return false;
   std::vector<uint32_t>::const_iterator found =
     std::find(SiPMIds.begin(), SiPMIds.end(), id);
@@ -97,7 +99,7 @@ bool MuonHOAcceptance::isChannelSiPM(uint32_t id) {
   else return false;
 }
 
-bool MuonHOAcceptance::inGeomAccept(double eta, double phi, 
+bool HOAcceptance::inGeomAccept(double eta, double phi, 
 				    double delta_eta, double delta_phi)
 {
   for (int ieta = 0; ieta<etaBounds; ++ieta) {
@@ -121,7 +123,7 @@ bool MuonHOAcceptance::inGeomAccept(double eta, double phi,
   return false;
 }
 
-bool MuonHOAcceptance::inNotDeadGeom(double eta, double phi, 
+bool HOAcceptance::inNotDeadGeom(double eta, double phi, 
 				     double delta_eta, double delta_phi) {
   if (!inited) return true;
   int ieta = int(eta/0.087) + ((eta>0) ? 1 : -1);
@@ -141,7 +143,7 @@ bool MuonHOAcceptance::inNotDeadGeom(double eta, double phi,
   return true;
 }
 
-bool MuonHOAcceptance::inSiPMGeom(double eta, double phi, 
+bool HOAcceptance::inSiPMGeom(double eta, double phi, 
 				  double delta_eta, double delta_phi) {
   if (!inited) return false;
   int ieta = int(eta/0.087) + ((eta>0) ? 1 : -1);
@@ -162,34 +164,23 @@ bool MuonHOAcceptance::inSiPMGeom(double eta, double phi,
   return false;
 }
 
-void MuonHOAcceptance::initIds(edm::EventSetup const& eSetup) {
+void HOAcceptance::initIds(edm::EventSetup const& eSetup) {
   deadIds.clear();
 
   edm::ESHandle<HcalChannelQuality> p;
   eSetup.get<HcalChannelQualityRcd>().get(p);
-  HcalChannelQuality *myqual = new HcalChannelQuality(*p.product());
+  HcalChannelQuality myqual(*p.product());
 
   edm::ESHandle<HcalSeverityLevelComputer> mycomputer;
   eSetup.get<HcalSeverityLevelComputerRcd>().get(mycomputer);
-  const HcalSeverityLevelComputer *mySeverity = mycomputer.product();
+  HcalSeverityLevelComputer const * mySeverity = mycomputer.product();
 
-  // TTree * deads = new TTree("deads", "deads");
-  // deads->ReadFile("HOdeadnessChannels.txt", "ieta/I:iphi/I:deadness/D");
   int ieta, iphi;
-  // double deadness;
-  // deads->SetBranchAddress("ieta", &ieta);
-  // deads->SetBranchAddress("iphi", &iphi);
-  // deads->SetBranchAddress("deadness", &deadness);
-  // deads->Print();
-  //std::cout << "ieta\tiphi\n";
   for (ieta=-15; ieta <= 15; ieta++) {
     if (ieta != 0) {
       for (iphi = 1; iphi <= 72; iphi++) {
-	// for (int i=0; i<deads->GetEntries(); ++i) {
-	//   deads->GetEntry(i);
-	//   if (deadness > 0.4) {
 	HcalDetId did(HcalOuter,ieta,iphi,4);
-	const HcalChannelStatus *mystatus = myqual->getValues(did.rawId());
+	const HcalChannelStatus *mystatus = myqual.getValues(did.rawId());
 	if (mySeverity->dropChannel(mystatus->getValue())) {
 	  deadIds.push_back(did.rawId());
 	  // std::cout << did.ieta() << '\t' << did.iphi() << '\n';
@@ -207,15 +198,12 @@ void MuonHOAcceptance::initIds(edm::EventSetup const& eSetup) {
   }
   std::sort(deadIds.begin(), deadIds.end());
   std::sort(SiPMIds.begin(), SiPMIds.end());
-  // std::cout << "SiPMIds: " << SiPMIds.size() << '\n';
-  // delete deads;
   buildDeadAreas();
   buildSiPMAreas();
   inited = true;
-  delete myqual;
 }
 
-void MuonHOAcceptance::buildDeadAreas() {
+void HOAcceptance::buildDeadAreas() {
   std::vector<uint32_t>::iterator did;
   std::list<deadIdRegion> didregions;
   for (did = deadIds.begin(); did != deadIds.end(); ++did) {
@@ -229,7 +217,7 @@ void MuonHOAcceptance::buildDeadAreas() {
   convertRegions(didregions, deadRegions);
 }
 
-void MuonHOAcceptance::buildSiPMAreas() {
+void HOAcceptance::buildSiPMAreas() {
   std::vector<uint32_t>::iterator sid;
   std::list<deadIdRegion> idregions;
 
@@ -243,7 +231,7 @@ void MuonHOAcceptance::buildSiPMAreas() {
   convertRegions(idregions,SiPMRegions);
 }
 
-void MuonHOAcceptance::mergeRegionLists (std::list<deadIdRegion>& didregions) {
+void HOAcceptance::mergeRegionLists (std::list<deadIdRegion>& didregions) {
   std::list<deadIdRegion>::iterator curr;
   std::list<deadIdRegion> list2;
   unsigned int startSize;
@@ -283,7 +271,7 @@ void MuonHOAcceptance::mergeRegionLists (std::list<deadIdRegion>& didregions) {
   } while (startSize > didregions.size());
 }
 
-void MuonHOAcceptance::convertRegions(std::list<deadIdRegion> const& idregions,
+void HOAcceptance::convertRegions(std::list<deadIdRegion> const& idregions,
 				      std::vector<deadRegion>& regions) {
   double e1, e2;
   double eMin,eMax,pMin,pMax;
@@ -341,7 +329,7 @@ void MuonHOAcceptance::convertRegions(std::list<deadIdRegion> const& idregions,
   }
 }
 
-TMultiGraph * MuonHOAcceptance::graphRegions(std::vector<deadRegion> const& regions) {
+TMultiGraph * HOAcceptance::graphRegions(std::vector<deadRegion> const& regions) {
   TMultiGraph * bounds = new TMultiGraph("bounds", "bounds");
   std::vector<deadRegion>::const_iterator region;
   TGraph * gr;
@@ -384,7 +372,7 @@ TMultiGraph * MuonHOAcceptance::graphRegions(std::vector<deadRegion> const& regi
   return bounds;
 }
 
-void MuonHOAcceptance::deadIdRegion::merge (deadIdRegion const& other) {
+void HOAcceptance::deadIdRegion::merge (deadIdRegion const& other) {
   etaMin = std::min(etaMin, other.etaMin);
   etaMax = std::max(etaMax, other.etaMax);
   phiMin = std::min(phiMin, other.phiMin);

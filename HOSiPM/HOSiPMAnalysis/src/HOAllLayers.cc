@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Sep  3 09:02:21 CDT 2009
-// $Id: HOAllLayers.cc,v 1.2 2010/08/02 18:45:27 andersj Exp $
+// $Id: HOAllLayers.cc,v 1.3 2010/08/24 18:03:03 andersj Exp $
 //
 //
 
@@ -29,6 +29,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -50,20 +53,20 @@
 #include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
 
-#include "TH1.h"
-#include "TFile.h"
+// #include "TH1.h"
+// #include "TFile.h"
 #include "TTree.h"
 
-#include "RooGlobalFunc.h"
-#include "RooDataSet.h"
-#include "RooRealVar.h"
-#include "RooCategory.h"
-#include "RooArgSet.h"
-#include "RooLandau.h"
-#include "RooGaussian.h"
-#include "RooAddPdf.h"
-#include "RooPlot.h"
-#include "RooFitResult.h"
+// #include "RooGlobalFunc.h"
+// #include "RooDataSet.h"
+// #include "RooRealVar.h"
+// #include "RooCategory.h"
+// #include "RooArgSet.h"
+// #include "RooLandau.h"
+// #include "RooGaussian.h"
+// #include "RooAddPdf.h"
+// #include "RooPlot.h"
+// #include "RooFitResult.h"
 
 //
 // class decleration
@@ -93,10 +96,8 @@ private:
   virtual void endJob() ;
   
   // ----------member data ---------------------------
-  TString outfname;
   TTree * hohits;
   TTree * jetTree;
-  TFile * outf;
   int maxEta;
   int maxPhi;
   double simHitL[20];
@@ -226,9 +227,7 @@ private:
 // constructors and destructor
 //
 HOAllLayers::HOAllLayers(const edm::ParameterSet& iConfig) :
-  outfname(iConfig.getUntrackedParameter<std::string>("outfname", 
-						      "HOSiPMMuons.root")),
-  outf(0), isSig(1),
+  isSig(1),
   mipE(iConfig.getUntrackedParameter<double>("mipE", 1.)),
   HOThreshold(iConfig.getUntrackedParameter<double>("HOThreshold", -100.)),
   doFit(iConfig.getUntrackedParameter<bool>("doFit", false)),
@@ -242,10 +241,12 @@ HOAllLayers::HOAllLayers(const edm::ParameterSet& iConfig) :
 {
    //now do what ever initialization is needed
   // assoc.useDefaultPropagator();
-  outf = new TFile(outfname, "recreate");
-  TH1::AddDirectory(true);
-  outf->cd();
-  hohits = new TTree("hcalhits", "hcalhits");
+  // outf = new TFile(outfname, "recreate");
+  // TH1::AddDirectory(true);
+  // outf->cd();
+  edm::Service<TFileService> fs;
+  hohits = fs->make<TTree>("hcalhits", "hcalhits");
+  // hohits = new TTree("hcalhits", "hcalhits");
   hohits->Branch("simHitL", simHitL, "simHitL[20]/D");
   hohits->Branch("sumHBsimhits", &sumHBsimhits, "sumHBsimhits/D");
   hohits->Branch("sumHEsimhits", &sumHEsimhits, "sumHEsimhits/D");
@@ -303,7 +304,7 @@ HOAllLayers::HOAllLayers(const edm::ParameterSet& iConfig) :
 
   jetTree = 0;
   if (doJets) {
-    jetTree = new TTree("jetTree", "jetTree");
+    jetTree = fs->make<TTree>("jetTree", "jetTree");
     jetTree->Branch("genJetEta", &genJetEta, "genJetEta/D");
     jetTree->Branch("genJetPhi", &genJetPhi, "genJetPhi/D");
     jetTree->Branch("genJetmass", &genJetmass, "genJetmass/D");
@@ -348,8 +349,8 @@ HOAllLayers::~HOAllLayers()
  
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
-  outf->Close();
-  delete outf;
+  // outf->Close();
+  // delete outf;
 }
 
 
@@ -372,13 +373,6 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   genphi = genPart->phi();
   genpt = genPart->pt();
 
-  // GlobalPoint genvertex(genPart->vx(), genPart->vy(), genPart->vz());
-  // GlobalVector genmomentum(genPart->px(), genPart->py(), genPart->pz());
-
-  // TrackDetMatchInfo genMatch = assoc.associate(iEvent, iSetup, genmomentum,
-  // 					       genvertex, genPart->charge(),
-  // 					       assocParams);
-
   Handle<PCaloHitContainer> HcalHits;
   iEvent.getByLabel("g4SimHits", "HcalHits", HcalHits);
   if (!HcalHits.isValid()) {
@@ -389,8 +383,6 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   std::map<uint32_t,double> homap;
   std::map<uint32_t,double>::iterator hitsum;
   std::map<int, double> towermap;
-  // int hiEta = centralEta+1, loEta = centralEta-1;
-  // int hiPhi = centralPhi+1, loPhi = centralPhi-1;
   homap.clear();
   int det, z, depth, eta, phi, layer;
   PCaloHitContainer::const_iterator simhit;
@@ -467,14 +459,6 @@ HOAllLayers::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if (findCenter) {
     centralEta = maxEta;
     centralPhi = maxPhi;
-    // hiEta = centralEta+1;
-    // loEta = centralEta-1;
-    // if (hiEta==0) ++hiEta;
-    // if (loEta==0) --loEta;
-    // hiPhi = centralPhi+1;
-    // loPhi = centralPhi-1;
-    // if (hiPhi > 72) hiPhi = hiPhi-72;
-    // if (loPhi < 1) loPhi = 72+loPhi;
   }
 
   for (int l = 0; l<20; ++l)
@@ -882,39 +866,6 @@ HOAllLayers::beginJob()
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 HOAllLayers::endJob() {
-  outf->Write();
-
-  // if (doFit) {
-  //   RooRealVar en("sumsimhits", "SimHit Energy", 0., 0.05, "GeV");
-  //   RooRealVar max("maxEta", "max eta", -72, 72);
-  //   RooCategory sig("isSig", "isSig");
-  //   sig.defineType("signal", 1);
-  //   sig.defineType("noise", 0);
-  //   RooRealVar MPV("MPV", "MPV", 0.004, 0.001, 0.05, "GeV");
-  //   RooRealVar width("width", "width", 0.0006, 0., 0.01, "GeV");
-  //   RooDataSet data("data", "data", hohits, RooArgSet(en,max), "maxEta!=0");
-  //   data.Print("v");
-  //   RooRealVar mean("mean", "mean", MPV.getVal(), 0.001, 0.05, "GeV");
-  //   RooRealVar sigma("sigma", "sigma", width.getVal()/2., 0., 0.01, "GeV");
-  //   RooLandau land("land", "land", en, MPV, width);
-  //   RooGaussian g("g", "g", en, MPV, sigma);
-    
-  //   RooRealVar fg("fg", "fg", 0.1, 0., 0.5);
-  //   RooAddPdf sum("sum", "sum", RooArgList(g,land), RooArgList(fg));
-
-  //   RooFitResult * fr = sum.fitTo(data, RooFit::Minos(false), 
-  // 				  RooFit::Range(0.0025, 0.01),
-  // 				  RooFit::Extended(false), RooFit::Save(true));
-  //   outf->cd();
-  //   fr->Print("v");
-  //   fr->Write("fitRes");
-  //   RooPlot * plot = en.frame(0.00, 0.015, 30);
-  //   data.plotOn(plot);
-  //   sum.plotOn(plot);
-  //   sum.paramOn(plot);
-  //   plot->SetName("simhitfit");
-  //   plot->Write();
-  // }
 }
 
 //define this as a plug-in

@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Sep  3 09:02:21 CDT 2009
-// $Id: HOSiPMAnalysis.cc,v 1.4 2010/04/15 14:53:28 andersj Exp $
+// $Id: HOSiPMAnalysis.cc,v 1.5 2010/04/15 15:13:51 andersj Exp $
 //
 //
 
@@ -29,6 +29,11 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -47,20 +52,8 @@
 #include "DataFormats/CaloTowers/interface/CaloTowerCollection.h"
 #include "TrackingTools/TrackAssociator/interface/TrackDetectorAssociator.h"
 
-#include "TH1.h"
-#include "TFile.h"
+// #include "TH1.h"
 #include "TTree.h"
-
-#include "RooGlobalFunc.h"
-#include "RooDataSet.h"
-#include "RooRealVar.h"
-#include "RooCategory.h"
-#include "RooArgSet.h"
-#include "RooLandau.h"
-#include "RooGaussian.h"
-#include "RooAddPdf.h"
-#include "RooPlot.h"
-#include "RooFitResult.h"
 
 #include "RecoMuon/MuonIdentification/interface/MuonHOAcceptance.h"
 
@@ -77,12 +70,13 @@ private:
   virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
+  virtual void resetBranches() ;
+  virtual void fillMC(edm::Event const& iEvent, edm::EventSetup const& iSetup) ;
+  virtual void fillMuons(edm::Event const& iEvent, 
+			 edm::EventSetup const& iSetup) ;
 
   // ----------member data ---------------------------
-  TString outfname;
   TTree * hohits;
-  TFile * outf;
-  double Barrel3x3E;
   double HOSimHitE;
   double HO3x3E;
   double centralRecHit;
@@ -95,8 +89,6 @@ private:
   double genHOeta;
   double genHOphi;
   int genAccept;
-  int genHitDeadChannel;
-  int genSiPM;
   double assocSimE;
   double sumsimhits;
   double muonHOE;
@@ -110,8 +102,6 @@ private:
   double hoeta;
   double hophi;
   int muAccept;
-  int muHitDeadChannel;
-  int muSiPM;
   double muEta;
   double muPhi;
   double mup;
@@ -134,9 +124,12 @@ private:
 
   bool doMuons;
   bool findCenter;
+  bool doMC;
 
   TrackAssociatorParameters assocParams;
   TrackDetectorAssociator assoc;
+
+  //MuonHOAcceptance accept;
 
 };
 
@@ -152,9 +145,9 @@ private:
 // constructors and destructor
 //
 HOSiPMAnalysis::HOSiPMAnalysis(const edm::ParameterSet& iConfig) :
-  outfname(iConfig.getUntrackedParameter<std::string>("outfname", 
-						      "HOSiPMMuons.root")),
-  hohits(0), outf(0), Barrel3x3E(0), HOSimHitE(0), HO3x3E(0), isSig(0),
+  // outfname(iConfig.getUntrackedParameter<std::string>("outfname", 
+  // 						      "HOSiPMMuons.root")),
+  hohits(0),/* outf(0),*/ HOSimHitE(0), HO3x3E(0),
   mipE(iConfig.getUntrackedParameter<double>("mipE", 1.)),
   doFit(iConfig.getUntrackedParameter<bool>("doFit", false)),
   centralEta(iConfig.getUntrackedParameter<int>("centralEta", 8)),
@@ -163,15 +156,15 @@ HOSiPMAnalysis::HOSiPMAnalysis(const edm::ParameterSet& iConfig) :
   dphi(iConfig.getUntrackedParameter<double>("delta_phi", 0.)),
   doMuons(iConfig.getUntrackedParameter<bool>("doMuons", false)),
   findCenter(iConfig.getUntrackedParameter<bool>("findCenter", doMuons)),
+  doMC(iConfig.getUntrackedParameter<bool>("doMC", false)),
   assocParams(iConfig.getParameter<edm::ParameterSet>("TrackAssociatorParameters"))
 {
-   //now do what ever initialization is needed
+  //now do what ever initialization is needed
+  // std::cout << "This is the contructor." << std::endl;
   assoc.useDefaultPropagator();
-  outf = new TFile(outfname, "recreate");
-  TH1::AddDirectory(true);
-  outf->cd();
-  hohits = new TTree("hohits", "hohits");
-  hohits->Branch("Barrel3x3E", &Barrel3x3E, "Barrel3x3E/D");
+  // outf = new TFile(outfname, "recreate");
+  edm::Service<TFileService> fs;
+  hohits = fs->make<TTree>("hohits", "hohits");
   hohits->Branch("HO3x3E", &HO3x3E, "HO3x3E/D");
   hohits->Branch("HOSimHitE", &HOSimHitE, "HOSimHitE/D");
   hohits->Branch("centralRecHit", &centralRecHit, "centralRecHit/D");
@@ -185,16 +178,10 @@ HOSiPMAnalysis::HOSiPMAnalysis(const edm::ParameterSet& iConfig) :
   hohits->Branch("genHOeta", &genHOeta, "genHOeta/D");
   hohits->Branch("genHOphi", &genHOphi, "genHOphi/D");
   hohits->Branch("genAccept", &genAccept, "genAccept/I");
-  hohits->Branch("genHitDeadChannel", &genHitDeadChannel, 
-		 "genHitDeadChannel/I");
-  hohits->Branch("genSiPM", &genSiPM, "genSiPM/I");
   hohits->Branch("assocSimE", &assocSimE, "assocSimE/D");
   hohits->Branch("hoeta", &hoeta, "hoeta/D");
   hohits->Branch("hophi", &hophi, "hophi/D");
   hohits->Branch("muAccept", &muAccept, "muAccept/I");
-  hohits->Branch("muHitDeadChannel", &muHitDeadChannel, 
-		 "muHitDeadChannel/I");
-  hohits->Branch("muSiPM", &muSiPM, "muSiPM/I");
   hohits->Branch("muonEta", &muonEta, "muonEta/I");
   hohits->Branch("muonPhi", &muonPhi, "muonPhi/I");
   hohits->Branch("muonHOE", &muonHOE, "muonHOE/D");
@@ -212,9 +199,6 @@ HOSiPMAnalysis::HOSiPMAnalysis(const edm::ParameterSet& iConfig) :
   hohits->Branch("genpt", &genpt, "genpt/D");
   hohits->Branch("geneta", &geneta, "geneta/D");
   hohits->Branch("genphi", &genphi, "genphi/D");
-  hohits->Branch("centralAdc", &centralAdc, "centralAdc/D");
-  hohits->Branch("sumAdc", &sumAdc, "sumAdc/D");
-  hohits->Branch("isSig", &isSig, "isSig/I");
 }
 
 
@@ -223,8 +207,8 @@ HOSiPMAnalysis::~HOSiPMAnalysis()
  
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
-  outf->Close();
-  delete outf;
+  // outf->Close();
+  // delete outf;
 }
 
 
@@ -238,7 +222,106 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
 
-  if (!MuonHOAcceptance::Inited()) MuonHOAcceptance::initIds(iSetup);
+  if ( !MuonHOAcceptance::Inited() ) MuonHOAcceptance::initIds(iSetup);
+  resetBranches();
+
+  if (doMC) {
+    fillMC(iEvent, iSetup);
+  }
+
+  // std::cout << "max HO sim hits (eta,phi): (" << centralEta << ','
+  // 	    << centralPhi << ")\n";
+
+  if (doMuons) {
+    fillMuons(iEvent, iSetup);
+  }
+
+  // std::cout << "gen associator (eta,phi): (" << genAEta << ','
+  // 	    << genAPhi << ")\n"
+  // 	    << "muon track associator (eta,phi): (" << muonEta << ','
+  // 	    << muonPhi << ")\n";
+  int hiEta = centralEta+1, loEta = centralEta-1;
+  if (hiEta==0) ++hiEta;
+  if (loEta==0) ++loEta;
+  int hiPhi = centralPhi+1, loPhi = centralPhi-1;
+  if (hiPhi > 72) hiPhi = hiPhi-72;
+  if (loPhi < 1) loPhi = 72+loPhi;
+
+  Handle<HORecHitCollection> HORecHits;
+  iEvent.getByLabel("horeco",HORecHits);
+  if (!HORecHits.isValid()) {
+    hohits->Fill();
+    //if (muMatch) delete muMatch;
+    return;
+  }
+  HORecHitCollection::const_iterator hit;
+  HO3x3E = 0;
+  centralRecHit = 0.;
+  for (hit = HORecHits->begin(); hit != HORecHits->end(); ++hit) {
+    HcalDetId tmpId(hit->id().rawId());
+    double hitEnergy = hit->energy()/mipE;
+    if ((tmpId.ieta() == maxEta) && (tmpId.iphi() == maxPhi)) {
+      centralRecHit += hitEnergy;
+    }
+  }
+
+  std::cout.flush();
+  hohits->Fill();
+}
+
+
+// ------------ method called once each job just before starting event loop  ------------
+void 
+HOSiPMAnalysis::beginJob()
+{
+}
+  
+// ------------ method called once each job just after ending the event loop  ------------
+void 
+HOSiPMAnalysis::endJob() {
+}
+
+void HOSiPMAnalysis::resetBranches() {
+  HO3x3E = 0.;
+  HOSimHitE = 0.;
+  centralRecHit = 0.;
+  centralE = 0.;
+  sumsimhits = 0.;
+  estEta = 0;
+  maxEta = 0;
+  maxPhi = 0;
+  genAEta = 0;
+  genAPhi = 0;
+  genHOeta = -9999;
+  genHOphi = -9999;
+  genAccept = 0;
+  assocSimE = 0.;
+  hoeta = -9999.;
+  hophi = -9999.;
+  muAccept = 0;
+  muonEta = 0;
+  muonPhi = 0;
+  muonHOE = -9999.;
+  muonHOES9 = -9999.;
+  muonHOmax = -9999.;
+  muEta = -9999.;
+  muPhi = -9999.;
+  mup = -9999.;
+  mupt = 9999.;
+  Nmu = 0;
+  NHOChan = 0;
+  assocMuSimE = 0.;
+  assocMuRecE = 0.;
+  genp = 0.;
+  genpt = 0.;
+  geneta = -9999.;
+  genphi = -9999.;
+}
+
+void HOSiPMAnalysis::fillMC(edm::Event const& iEvent, 
+			    edm::EventSetup const& iSetup) {
+
+  using namespace edm;
 
   Handle<reco::GenParticleCollection> genparts;
   iEvent.getByType(genparts);
@@ -265,12 +348,6 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   std::map<uint32_t,double> homap;
   std::map<uint32_t,double>::iterator hitsum;
-  int hiEta = centralEta+1, loEta = centralEta-1;
-  if (hiEta==0) ++hiEta;
-  if (loEta==0) ++loEta;
-  int hiPhi = centralPhi+1, loPhi = centralPhi-1;
-  if (hiPhi > 72) hiPhi = hiPhi-72;
-  if (loPhi < 1) loPhi = 72+loPhi;
   homap.clear();
 //   int det, z, depth, eta, phi, layer, etaBin;
   //std::cout << hiEta << " " << loEta << "," << hiPhi << " " << loPhi << std::endl;
@@ -309,8 +386,6 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     genAccept += 10;
   if (MuonHOAcceptance::inSiPMGeom(genHOeta,genHOphi,deta,dphi))
     genAccept += 100;
-  genHitDeadChannel = 0;
-  genSiPM = 0;
   for (hitsum = homap.begin(); hitsum != homap.end(); ++hitsum) {
     HcalDetId tmpId(hitsum->first);
     if (tmpId.subdet() == HcalOuter) {
@@ -323,8 +398,6 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	maxEta = tmpId.ieta();
 	maxPhi = tmpId.iphi();
       }
-      if (MuonHOAcceptance::isChannelDead(tmpId)) ++genHitDeadChannel;
-      if (MuonHOAcceptance::isChannelSiPM(tmpId)) ++genSiPM;
     }
   }
   
@@ -332,97 +405,6 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if (findCenter) {
     centralEta = maxEta;
     centralPhi = maxPhi;
-    hiEta = centralEta+1;
-    loEta = centralEta-1;
-    if (hiEta==0) ++hiEta;
-    if (loEta==0) --loEta;
-    hiPhi = centralPhi+1;
-    loPhi = centralPhi-1;
-    if (hiPhi > 72) hiPhi = hiPhi-72;
-    if (loPhi < 1) loPhi = 72+loPhi;
-  }
-
-  std::cout << "max HO sim hits (eta,phi): (" << centralEta << ','
-	    << centralPhi << ")\n";
-
-  muonHOE = 0.;
-  muonHOES9 = 0.;
-  Nmu = 0;
-  TrackDetMatchInfo * muMatch = 0;
-  muonEta = 0;
-  muonPhi = -1;
-  assocMuSimE = 0.;
-  assocMuRecE = 0.;
-  hoeta = -30.;
-  hophi = -30.;
-  double maxmuE = 0.;
-  muAccept = 0;
-  muHitDeadChannel = 0;
-  NHOChan = 0;
-  if (doMuons) {
-    edm::Handle<reco::MuonCollection> muons;
-    //  iEvent.getByLabel("trackerMuons", muons);
-    iEvent.getByLabel("muons", muons);
-
-    for ( reco::MuonCollection::const_iterator muon = muons->begin(); 
-	  muon != muons->end(); ++muon ) {
-      // barrel Only
-      // if (fabs(muon->eta()) > 1.305) continue;
-      if (!muon->isTrackerMuon()) continue;
-      ++Nmu;
-      if (muonHOE == 0) {
-	muonHOE = muon->calEnergy().ho;
-	muonHOES9 = muon->calEnergy().hoS9;
-	muonHOmax = muon->calEnergy().hoMax;
-	if (! muon->track().isNull() ) {
-	  reco::Track const * track = muon->track().get();
-	  muMatch = new TrackDetMatchInfo(assoc.associate(iEvent,iSetup,
-							  *track,assocParams));
-	  hophi = muMatch->trkGlobPosAtHO.Phi();
-	  hoeta = muMatch->trkGlobPosAtHO.Eta();
-	  muEta = track->eta();
-	  muPhi = track->phi();
-	  mup = track->p();
-	  mupt = track->pt();
-	  muAccept = 0;
-	  if (MuonHOAcceptance::inGeomAccept(hoeta, hophi, deta, dphi)) 
-	    muAccept += 1;
-	  if (MuonHOAcceptance::inNotDeadGeom(hoeta, hophi, deta, dphi)) 
-	    muAccept += 10;
-	  if (MuonHOAcceptance::inSiPMGeom(hoeta, hophi, deta, dphi)) 
-	    muAccept += 100;
-	  muHitDeadChannel = 0;
-	  muSiPM = 0;
-	  NHOChan = 0;
-	  maxmuE = 0.;
-	  muonEta = 0;
-	  muonPhi = -1;
-	  assocMuSimE = 0.;
-	  for (std::vector<DetId>::const_iterator aid = 
-		 muMatch->crossedHOIds.begin();
-	       aid != muMatch->crossedHOIds.end(); ++aid) {
-	    HcalDetId mId(aid->rawId());
-	    ++NHOChan;
-	    if (MuonHOAcceptance::isChannelDead(mId)) ++muHitDeadChannel;
-	    if (MuonHOAcceptance::isChannelSiPM(mId)) ++muSiPM;
-	    if ( (!MuonHOAcceptance::isChannelDead(mId)) && (muonEta==0) ) {
-	      muonEta = mId.ieta();
-	      muonPhi = mId.iphi();
-	    }
-	    hitsum = homap.find(mId.rawId());
-	    if ((hitsum != homap.end()) && (mId.rawId() == hitsum->first)) {
-	      assocMuSimE += hitsum->second;
-	      if ((muonEta==0) || (hitsum->second > maxmuE)) {
-		muonEta = mId.ieta();
-		muonPhi = mId.iphi();
-		maxmuE = hitsum->second;
-	      }
-	    }
-	  }
-	  delete muMatch;
-	}
-      }
-    }
   }
 
   assocSimE = 0.;
@@ -447,171 +429,70 @@ HOSiPMAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   }
 
-  std::cout << "gen associator (eta,phi): (" << genAEta << ','
-	    << genAPhi << ")\n"
-	    << "muon track associator (eta,phi): (" << muonEta << ','
-	    << muonPhi << ")\n";
-  Handle<HORecHitCollection> HORecHits;
-  iEvent.getByLabel("horeco",HORecHits);
-  if (!HORecHits.isValid()) {
-    hohits->Fill();
-    //if (muMatch) delete muMatch;
-    return;
-  }
-  HORecHitCollection::const_iterator hit;
-  homap.clear();
-  HO3x3E = 0;
-  centralRecHit = 0.;
-  maxmuE = 0.;
-  for (hit = HORecHits->begin(); hit != HORecHits->end(); ++hit) {
-    HcalDetId tmpId(hit->id().rawId());
-    double hitEnergy = hit->energy()/mipE;
-    if ((tmpId.ieta() == maxEta) && (tmpId.iphi() == maxPhi)) {
-      centralRecHit += hitEnergy;
-    }
-    if ((tmpId.ieta() == centralEta) && (tmpId.iphi() == centralPhi)) {
-      isSig = 1;
-      HO3x3E += hitEnergy;
-    } else if ( (centralPhi > 0) && (tmpId.ieta()>=loEta) && 
-		(tmpId.ieta()<=hiEta) ) {
-      if ((loPhi <= hiPhi) && 
-	  (tmpId.iphi() <= hiPhi) && (tmpId.iphi() >= loPhi)) {
-	isSig = 2;
-	HO3x3E += hitEnergy;
-      } else if ((loPhi > hiPhi) &&
-		 ((tmpId.iphi() <= hiPhi) || (tmpId.iphi() >= loPhi))) {
-	isSig = 2;
-	HO3x3E += hitEnergy;
-      } else {
-	isSig = 0;
+}
+
+void HOSiPMAnalysis::fillMuons(edm::Event const& iEvent, 
+			       edm::EventSetup const& iSetup) {
+  using namespace edm;
+
+  edm::Handle<reco::MuonCollection> muons;
+  //  iEvent.getByLabel("trackerMuons", muons);
+  iEvent.getByLabel("muons", muons);
+
+  TrackDetMatchInfo * muMatch = 0;
+  for ( reco::MuonCollection::const_iterator muon = muons->begin(); 
+	muon != muons->end(); ++muon ) {
+    // barrel Only
+    if (fabs(muon->eta()) > 1.305) continue;
+    if (!muon->isTrackerMuon()) continue;
+    ++Nmu;
+    if (muonHOmax <= 0) {
+      if (! muon->track().isNull() ) {
+	reco::Track const * track = muon->track().get();
+	muMatch = new TrackDetMatchInfo(assoc.associate(iEvent,iSetup,
+							*track,assocParams));
+
+	muonHOE = muMatch->crossedEnergy(TrackDetMatchInfo::HORecHits);
+	muonHOES9 = muMatch->nXnEnergy(TrackDetMatchInfo::HORecHits,1);
+	DetId hoMaxId = 
+	  muMatch->findMaxDeposition(TrackDetMatchInfo::HORecHits,1);
+	for(std::vector<const HORecHit*>::const_iterator muhit = 
+	      muMatch->hoRecHits.begin(); 	 
+	    muhit != muMatch->hoRecHits.end(); ++muhit) { 	 
+	  if ((*muhit)->id() != hoMaxId) continue; 	 
+	  muonHOmax = (*muhit)->energy();
+	}
+
+	hophi = muMatch->trkGlobPosAtHO.Phi();
+	hoeta = muMatch->trkGlobPosAtHO.Eta();
+	muEta = track->eta();
+	muPhi = track->phi();
+	mup = track->p();
+	mupt = track->pt();
+	muAccept = 0;
+	if (MuonHOAcceptance::inGeomAccept(hoeta, hophi, deta, dphi)) 
+	  muAccept += 1;
+	if (MuonHOAcceptance::inNotDeadGeom(hoeta, hophi, deta, dphi)) 
+	  muAccept += 10;
+	if (MuonHOAcceptance::inSiPMGeom(hoeta, hophi, deta, dphi)) 
+	  muAccept += 100;
+	NHOChan = 0;
+	muonEta = 0;
+	muonPhi = -1;
+	for (std::vector<DetId>::const_iterator aid = 
+	       muMatch->crossedHOIds.begin();
+	     aid != muMatch->crossedHOIds.end(); ++aid) {
+	  HcalDetId mId(aid->rawId());
+	  ++NHOChan;
+	  if ( (!MuonHOAcceptance::isChannelDead(mId)) && (muonEta==0) ) {
+	    muonEta = mId.ieta();
+	    muonPhi = mId.iphi();
+	  }
+	}
+	delete muMatch;
       }
-    } else {
-      isSig = 0;
     }
   }
-
-  //if (muMatch) delete muMatch;
-
-  // if ((centralE>0.015) && (centralRecHit<2.)) {
-  //   std::cout << "large simhit: " << centralE 
-  // 	      << " no correspondingly large rechit: " << centralRecHit
-  // 	      << std::endl;
-  // }
-
-  // if ((centralE>0.0015) && (centralE<0.0025) && (centralRecHit>3.)) {
-  //   std::cout << "MIP-like simhit: " << centralE 
-  // 	      << " with large rechit: " << centralRecHit
-  // 	      << std::endl;
-  // }
-
-  // if ((centralE>0.0015) && (centralE<0.003) && (muonHOE < 0.01)) {
-  //   std::cout << "MIP-like simhit: " << centralE
-  // 	      << " no muon associated deposit: " << muonHOE
-  // 	      << " S9 energy: " << muonHOES9
-  // 	      << std::endl;
-  // }
-
-  Barrel3x3E = 0.;
-
-//   Handle<CaloTowerCollection> towers;
-//   iEvent.getByType(towers);
-//   if (!towers.isValid()) {
-//     hohits->Fill();
-//     return;
-//   }
-//   CaloTowerCollection::const_iterator tower;
-//   for (tower = towers->begin(); tower != towers->end(); ++tower) {
-//     if ((tower->ieta() <= hiEta) && (tower->ieta() >= loEta)) {
-//       if ((loPhi <= hiPhi) &&
-// 	  (tower->iphi() >= loPhi) && (tower->iphi() <= hiPhi)) {
-// 	Barrel3x3E += tower->energy();
-// // 	if (tower->outerEnergy() > 0)
-// // 	  std::cout << "HO energy in tower: " << tower->outerEnergy() << std::endl;
-//       } else if ((loPhi > hiPhi) &&
-// 		 ((tower->iphi() <= hiPhi) || (tower->iphi() >= loPhi))) {
-// 	Barrel3x3E += tower->energy();
-// // 	if (tower->outerEnergy() > 0)
-// // 	  std::cout << "HO energy in tower: " << tower->outerEnergy() << std::endl;
-//       }
-//     }
-//   }
-
-  centralAdc = 0.;
-  sumAdc = 0.;
-
-  // Handle<HODigiCollection> hodigis;
-  // iEvent.getByType(hodigis);
-  // if (!hodigis.isValid()) {
-  //   hohits->Fill();
-  //   return;
-  // }
-  // HODigiCollection::const_iterator digi;
-  // homap.clear();
-  // double nomCharge, ped;
-  // for (digi = hodigis->begin(); digi != hodigis->end(); ++digi) {
-  //   nomCharge = 0.;
-  //   ped = 0;
-  //   if (digi->presamples() > 0) {
-  //     for (int s = 0; s < digi->presamples(); ++s) {
-  // 	nomCharge += digi->sample(s).nominal_fC();
-  //     }
-  //     ped = nomCharge/digi->presamples();
-  //   }
-  //   nomCharge = 0.;
-  //   for (int s = digi->presamples(); (s<digi->size()) && (s<digi->presamples()+4); 
-  // 	 ++s) {
-  //     nomCharge += digi->sample(s).nominal_fC()-ped;
-  //   }
-  //   if ((digi->id().ieta() == centralEta) && (digi->id().iphi() == centralPhi)) {
-  //     centralAdc += nomCharge;
-  //   } else {
-  //     sumAdc += nomCharge;
-  //   }
-  // }
-  std::cout.flush();
-  hohits->Fill();
-//   std::cout << std::endl;
-}
-
-
-// ------------ method called once each job just before starting event loop  ------------
-void 
-HOSiPMAnalysis::beginJob()
-{
-}
-
-// ------------ method called once each job just after ending the event loop  ------------
-void 
-HOSiPMAnalysis::endJob() {
-  if (doFit) {
-    RooRealVar en("hitEnergy", "RecHit Energy", -2., 25., "GeV");
-    RooCategory sig("isSig", "isSig");
-    sig.defineType("signal", 1);
-    sig.defineType("noise", 0);
-    RooRealVar MPV("MPV", "MPV", 1.0, -2., 50., "GeV");
-    RooRealVar width("width", "width", 0.05, 0., 50., "GeV");
-    RooDataSet data("data", "data", hohits, RooArgSet(en,sig), "(isSig==1)&&(hitEnergy<25.)");
-    data.Print("v");
-    RooRealVar mean("mean", "mean", MPV.getVal(), -2., 25., "GeV");
-    RooRealVar sigma("sigma", "sigma", width.getVal(), 0., 50., "GeV");
-    RooLandau land("land", "land", en, MPV, width);
-    RooGaussian g("g", "g", en, mean, sigma);
-    
-    RooRealVar fg("fg", "fg", 0., 1.);
-    RooAddPdf sum("sum", "sum", RooArgList(g,land), RooArgList(fg));
-
-    RooFitResult * fr = sum.fitTo(data, RooFit::Minos(false), 
-				  RooFit::Extended(false), RooFit::Save(true));
-    fr->Write();
-    RooPlot * plot = en.frame(-2., 25., 27);
-    data.plotOn(plot);
-    sum.plotOn(plot);
-    sum.paramOn(plot);
-    plot->SetName("datafit");
-    //plot->Write();
-  }
-
-  outf->Write();
 }
 
 //define this as a plug-in

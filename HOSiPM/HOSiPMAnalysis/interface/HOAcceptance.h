@@ -6,20 +6,22 @@
 
 class TMultiGraph;
 
-class MuonHOAcceptance {
+class HOAcceptance {
  public:
-  static bool isChannelDead(uint32_t id);
-  static bool isChannelSiPM(uint32_t id);
-  static bool inGeomAccept(double eta, double phi, double delta_eta = 0.,
+  HOAcceptance();
+  virtual ~HOAcceptance() { };
+  bool isChannelDead(uint32_t id);
+  bool isChannelSiPM(uint32_t id);
+  bool inGeomAccept(double eta, double phi, double delta_eta = 0.,
 			   double delta_phi = 0.);
-  static bool inNotDeadGeom(double eta, double phi, double delta_eta = 0.,
+  bool inNotDeadGeom(double eta, double phi, double delta_eta = 0.,
 			    double delta_phi = 0.);
-  static bool inSiPMGeom(double eta, double phi, double delta_eta = 0.,
+  bool inSiPMGeom(double eta, double phi, double delta_eta = 0.,
 			 double delta_phi = 0.);
-  static void initIds(edm::EventSetup const& eSetup);
-  static bool Inited() { return inited; }
-  static TMultiGraph * graphDeadRegions() { return graphRegions(deadRegions); }
-  static TMultiGraph * graphSiPMRegions() { return graphRegions(SiPMRegions); }
+  void initIds(edm::EventSetup const& eSetup);
+  bool Inited() { return inited; }
+  TMultiGraph * graphDeadRegions() { return graphRegions(deadRegions); }
+  TMultiGraph * graphSiPMRegions() { return graphRegions(SiPMRegions); }
 
  private:
 
@@ -71,25 +73,25 @@ class MuonHOAcceptance {
     void merge (deadIdRegion const& other);
   };
 
-  static void buildDeadAreas();
-  static void buildSiPMAreas();
-  static void mergeRegionLists(std::list<deadIdRegion>& didregions);
-  static void convertRegions(std::list<deadIdRegion> const& idregions,
+  void buildDeadAreas();
+  void buildSiPMAreas();
+  void mergeRegionLists(std::list<deadIdRegion>& didregions);
+  void convertRegions(std::list<deadIdRegion> const& idregions,
 			     std::vector<deadRegion>& regions);
-  static TMultiGraph * graphRegions(std::vector<deadRegion> const& regions);
+  TMultiGraph * graphRegions(std::vector<deadRegion> const& regions);
 
-  static std::vector<uint32_t> deadIds;
-  static std::vector<deadRegion> deadRegions;
-  static std::vector<uint32_t> SiPMIds;
-  static std::vector<deadRegion> SiPMRegions;
-  static bool inited;
-  static int const etaBounds;
-  static double const etaMin[];
-  static double const etaMax[];
-  static double const twopi;
-  static int const phiSectors;
-  static double const phiMinR0[];
-  static double const phiMaxR0[];
-  static double const phiMinR12[];
-  static double const phiMaxR12[];
+  std::vector<uint32_t> deadIds;
+  std::vector<deadRegion> deadRegions;
+  std::vector<uint32_t> SiPMIds;
+  std::vector<deadRegion> SiPMRegions;
+  bool inited;
+  double const twopi;
+  // int const etaBounds;
+  // int const phiSectors;
+  // std::vector<double> etaMin;
+  // std::vector<double> etaMax;
+  // std::vector<double> phiMinR0;
+  // std::vector<double> phiMaxR0;
+  // std::vector<double> phiMinR12;
+  // std::vector<double> phiMaxR12;
 };
