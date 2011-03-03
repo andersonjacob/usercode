@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Mar  3 13:49:33 CST 2011
-// $Id$
+// $Id: TrueDimuonResonance.cc,v 1.1 2011/03/03 21:12:44 andersj Exp $
 //
 //
 
@@ -94,6 +94,7 @@ TrueDimuonResonance::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    Handle<reco::GenParticleCollection> genParticles;
    iEvent.getByLabel(mGenName, genParticles);
+   if (!genParticles.isValid()) return false;
 
    reco::GenParticleCollection::const_iterator particle;
    reco::candidate::const_iterator daughter;
