@@ -13,7 +13,7 @@
 //
 // Original Author:  "Jacob Anderson"
 //         Created:  Thu Mar  3 13:49:33 CST 2011
-// $Id: TrueDimuonResonance.cc,v 1.1 2011/03/03 21:12:44 andersj Exp $
+// $Id: TrueDimuonResonance.cc,v 1.2 2011/03/03 21:43:55 andersj Exp $
 //
 //
 
@@ -49,6 +49,9 @@ class TrueDimuonResonance : public edm::EDFilter {
       virtual void beginJob() ;
       virtual bool filter(edm::Event&, const edm::EventSetup&);
       virtual void endJob() ;
+
+      virtual void printParticleDecay(reco::Candidate const * part, 
+				      std::string prefix) ;
       
       // ----------member data ---------------------------
   edm::InputTag mGenName;
@@ -97,19 +100,25 @@ TrueDimuonResonance::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
    if (!genParticles.isValid()) return false;
 
    reco::GenParticleCollection::const_iterator particle;
-   reco::candidate::const_iterator daughter;
+   reco::Candidate const * daughter;
+   //reco::Candidate::const_iterator dauItr;
 
    int mucnt;
    for (particle = genParticles->begin(); particle != genParticles->end();
 	++particle) {
      mucnt = 0;
-     for (daughter = particle->begin(); daughter != particle->end(); 
-	  ++daughter) {
+     // for (dauItr = particle->begin(); dauItr != particle->end();
+     // 	  ++dauItr) {
+     for(unsigned int i=0; i < particle->numberOfDaughters(); ++i) {
+       daughter = particle->daughter(i);
        if ( (abs(daughter->pdgId()) == 13) && 
-	    ((daughter->status() == 1) || (daughter->status() == 3)) )
-	 ++mucnt;
+       	    ((daughter->status() == 1) || (daughter->status() == 3)) )
+       	 ++mucnt;
      }
-     if (mucnt == 2) return true;
+     if (mucnt == 2) {
+       printParticleDecay(&(*particle), "");
+       return true;
+     }
    }
 
    return false;
@@ -126,5 +135,17 @@ void
 TrueDimuonResonance::endJob() {
 }
 
+
+void TrueDimuonResonance::printParticleDecay(reco::Candidate const * part, 
+						 std::string prefix) {
+  std::cout << prefix << " id: " << part->pdgId()
+	    << " status: " << part->status()
+	    << " nDau: " << part->numberOfDaughters() << '\n';
+  reco::Candidate const * daughter;
+  for (unsigned int dau = 0; dau < part->numberOfDaughters(); ++dau) {
+    daughter = part->daughter(dau);
+    printParticleDecay(daughter,  "  " + prefix);
+  }
+}
 //define this as a plug-in
 DEFINE_FWK_MODULE(TrueDimuonResonance);
