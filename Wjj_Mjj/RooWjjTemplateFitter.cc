@@ -99,7 +99,7 @@ void RooWjjTemplateFitter(TString PLOTVAR = "MassV2j_PFCor",
   //ActivateTreeBranches(*treeTemp, true);
   gROOT->cd();
   TTree* tree2 = treeTemp->CopyTree(*ele_selection);
-  RooRealVar mVjj(PLOTVAR, "m_{jj}", 20.0, 400.0, "GeV/c^{2}");
+  RooRealVar mVjj(PLOTVAR, "m_{l#nu jj}", 160., 900.0, "GeV/c^{2}");
   RooCategory channel("channel", "channel");
   channel.defineType("muon");
   channel.defineType("electron");
@@ -175,7 +175,8 @@ void RooWjjTemplateFitter(TString PLOTVAR = "MassV2j_PFCor",
   RooFitResult * fr = sum.fitTo(wjetsData, RooFit::Minos(false),
 				RooFit::Save(true));
   
-  RooPlot * mf = mVjj.frame(RooFit::Name(PLOTVAR+"_plot"),RooFit::Bins(38));
+  RooPlot * mf = mVjj.frame(RooFit::Name(PLOTVAR+"_plot"),
+			    RooFit::Bins(int((mVjj.getMax()-mVjj.getMin())/20.+0.5)));
   wjetsData.plotOn(mf, RooFit::Name("data_pts"));
   sum.plotOn(mf, RooFit::Name("wjets_shape"));
   //sum.paramOn(mf);
