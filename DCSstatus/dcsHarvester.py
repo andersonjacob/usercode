@@ -397,7 +397,10 @@ except AttributeError:
     # the current time
     RunEnd = datetime.datetime.utcnow()
 print "At", str(datetime.datetime.utcnow()) + ", processing run", \
-      str(RunRow[0]), "that started on", str(RunStart), "..."
+      str(RunRow[0]), "that started on", str(RunStart),
+if options.update:
+    print "and ended at", str(RunEnd),
+print '...'
 
 lslensql = """
 select cms_gt.FUNC_GET_LS_SEC_BY_RUNNR(:runNumber)
