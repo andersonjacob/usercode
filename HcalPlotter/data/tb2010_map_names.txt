@@ -1,0 +1,24 @@
+# HF
+#i   cr sl tb dcc spigot fiber fiberchan subdet ieta iphi depth Name
+0000 17 18 t   0      8     4         0     HF   29    3     1  Plate-OSS
+0000 17 18 t   0      8     4         1     HF   30    3     1  Plate-C2
+0000 17 18 t   0      8     5         0     HF   31    3     1  Plate-C1
+0000 17 18 t   0      8     6         2     HF   32    3     1  Plate-MS1
+0000 17 18 t   0      8     6         0     HF   33    3     1  Plate-MS2
+0000 17 18 t   0      8     5         1     HF   34    3     1  Plate-PTP-8
+0000 17 18 t   0      8     5         2     HF   35    3     1  Plate-PTP-13
+0000 17 18 t   0      8     1         0     HF   36    3     1  PMTBox-Mesh
+0000 17 18 t   0      8     1         2     HF   37    3     1  PMTBox-R7600-106-M4-1
+0000 17 18 t   0      8     2         2     HF   38    3     1  PMTBox-R7600-106-M4-2
+0000 17 18 t   0      8     2         0     HF   39    3     1  PMTBox-R7600-106-M4-3
+0000 17 18 t   0      8     2         1     HF   40    3     1  PMTBox-R7600-106-M4-4
+0000 17 18 t   0      8     3         0     HF   41    3     1  PMTBox-R7600-200-M4-1
+0000 17 18 t   0      8     3         1     HF   29    5     1  PMTBox-R7600-200-M4-2
+0000 17 18 t   0      8     3         2     HF   30    5     1  PMTBox-R7600-200-M4-3
+0000 17 18 t   0      8     4         2     HF   31    5     1  PMTBox-R7600-200-M4-4
+0000 17 18 t   0      8     1         1     HF   32    5     1  PMTBox-R7525
+0000 17 18 t   0      8     6         1     HF   33    5     1  Bundle-B (R7525-fixed)
+0000 17 18 t   0      8     7         0     HF   34    5     1  Bundle-A
+0000 17 18 t   0      8     7         1     HF   35    5     1  Finger-H
+0000 17 18 t   0      8     7         2     HF   36    5     1  Finger-V
+
