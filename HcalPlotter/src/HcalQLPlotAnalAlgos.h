@@ -39,6 +39,7 @@ public:
   void setBeamCounters( HcalTBBeamCounters const& counters ) {
     qadc = &counters;
   }
+  void setHBTableEtaPhi( double eta, double phi);
   void processBeamCounters();
   void processRH(const HBHERecHitCollection& hbherhc,
 		 const HBHEDigiCollection& hbhedgc);
@@ -67,17 +68,22 @@ private:
   HcalTBBeamCounters const * qadc;
   static int const maxDim = 11;
   static int const maxDepth = 5;
+  static int const ebMaxPhi = 21;
+  static int const ebMaxEta = 86;
 
   TTree * dataTree;
   TH2F * HBLego, * EBLego, * HOLego, * EBLegoFine;
   TH1F * EBieta, * EBiphi;
+  TH1F * HBEnergy;
   double VMBadc_, VMFadc_, VMadc_;
   double S1adc_, S2adc_, S3adc_, S4adc_;
   double BH1adc_, BH2adc_, BH3adc_, BH4adc_;
+  double HBTableEta, HBTablePhi;
   int maxEtaHO, maxPhiHO, maxEtaHB, maxPhiHB;
   double HOE1, HBE1;
   double HOE[maxDim][maxDim];
   double HBE[maxDim][maxDim][maxDepth];
+  double EBE[ebMaxEta][ebMaxPhi];
   std::map< HcalDetId, std::vector< int > > pedMap_;
 };
 

@@ -52,9 +52,28 @@ process.load("CalibCalorimetry.EcalTrivialCondModules.EcalTrivialCondRetriever_c
 process.ecalEBunpacker.FEDs = cms.vint32(610)
 process.ecalEBunpacker.memUnpacking = cms.bool(False)
 process.ecalEBunpacker.srpUnpacking = cms.bool(False)
+process.ecalEBunpacker.syncCheck = cms.bool(False)
+process.ecalEBunpacker.orderedFedList = cms.vint32(610)
+process.ecalEBunpacker.silentMode = cms.untracked.bool(False)
 
-process.load("andersj.HcalPlotter.ecalLocalRecoSequence_cff")
-process.ecalDataSequence = cms.Sequence(process.ecalEBunpacker*process.ecalGlobalUncalibRecHit*process.ecalRecHit)
+import RecoLocalCalo.EcalRecProducers.ecalFixedAlphaBetaFitUncalibRecHit_cfi
+
+process.ecalUncalibHit = RecoLocalCalo.EcalRecProducers.ecalFixedAlphaBetaFitUncalibRecHit_cfi.ecalFixedAlphaBetaFitUncalibRecHit.clone()
+
+process.ecalUncalibHit.EBdigiCollection = 'ecalEBunpacker:ebDigis'
+process.ecalUncalibHit.EEdigiCollection = 'ecalEBunpacker:eeDigis'
+
+process.load("RecoLocalCalo.EcalRecProducers.ecalRecHit_cfi")
+process.ecalRecHit.ebDetIdToBeRecovered = cms.InputTag("","")
+process.ecalRecHit.eeDetIdToBeRecovered = cms.InputTag("","")
+process.ecalRecHit.eeFEToBeRecovered = cms.InputTag("","")
+process.ecalRecHit.ebFEToBeRecovered = cms.InputTag("","")
+process.ecalRecHit.recoverEBFE = cms.bool(False)
+process.ecalRecHit.recoverEEFE = cms.bool(False)
+process.ecalRecHit.EBuncalibRecHitCollection = 'ecalUncalibHit:EcalUncalibRecHitsEB'
+process.ecalRecHit.EEuncalibRecHitCollection = 'ecalUncalibHit:EcalUncalibRecHitsEE'
+
+process.ecalDataSequence = cms.Sequence(process.ecalEBunpacker*process.ecalUncalibHit*process.ecalRecHit)
 
 process.load("EventFilter.HcalRawToDigi.HcalRawToDigi_cfi")
 process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hbhe_cfi")

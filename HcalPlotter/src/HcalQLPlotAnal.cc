@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalHOTBPlotAnal.cc,v 1.6 2010/06/21 07:47:58 mansj Exp $
+// $Id: HcalQLPlotAnal.cc,v 1.1 2011/07/20 11:33:58 andersj Exp $
 //
 //
 
@@ -68,6 +68,7 @@ class HcalHOTBPlotAnal : public edm::EDAnalyzer {
   int hbDigiCnt_;
   int hoDigiCnt_;
   int hfDigiCnt_;
+  int ebCnt_;
   int evtCnt_;
   HcalQLPlotAnalAlgos * algo_;
 
@@ -98,6 +99,7 @@ HcalHOTBPlotAnal::HcalHOTBPlotAnal(const edm::ParameterSet& iConfig) :
   hbDigiCnt_ = 0;
   hoDigiCnt_ = 0;
   hfDigiCnt_  = 0;
+  ebCnt_ = 0;
   evtCnt_ = 0;
   algo_ = new
     HcalQLPlotAnalAlgos(iConfig.getParameter<edm::ParameterSet>("HistoParameters"));
@@ -117,14 +119,16 @@ HcalHOTBPlotAnal::~HcalHOTBPlotAnal()
 
 // ------------ method called to for each event  ------------
 void
-HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, 
+			  const edm::EventSetup& iSetup)
 {
   evtCnt_++;
   // Step A/C: Get Inputs and process (repeatedly)
   edm::Handle<HcalTBTriggerData> trig;
   iEvent.getByLabel(hcalTrigLabel_,trig);
   if (!trig.isValid()) {
-    edm::LogError("HcalHOTBPlotAnal::analyze") << "No Trigger Data found, skip event";
+    edm::LogError("HcalHOTBPlotAnal::analyze") << "No Trigger Data found, "
+      "skip event";
     return;
   } else {
     algo_->SetEventType(*trig);
@@ -140,10 +144,19 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     if (doBeamCounters_)
       algo_->processBeamCounters();
   }
+  edm::Handle<HcalTBEventPosition> pos;
+  iEvent.getByLabel(hcalTrigLabel_,pos);
+  if (!pos.isValid()) {
+    edm::LogWarning("HcalHOTBPlotAnal::analyse") << "no TB position data "
+      "found.  Skipping for this event.";
+  } else {
+    algo_->setHBTableEtaPhi(pos->hbheTableEta(), pos->hbheTablePhi());
+  }
   edm::Handle<HBHEDigiCollection> hbhedg;
   iEvent.getByLabel(hcalDigiLabel_,hbhedg);
   if (!hbhedg.isValid()) {
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HBHE Digis/RecHits not found";
+    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HBHE "
+      "Digis/RecHits not found";
   } else {
     algo_->processDigi(*hbhedg);
     hbDigiCnt_ += hbhedg->size();
@@ -151,7 +164,8 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   edm::Handle<HBHERecHitCollection> hbherh;  
   iEvent.getByLabel(hbheRHLabel_,hbherh);
   if (!hbherh.isValid()) {
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HBHE Digis/RecHits not found";
+    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HBHE "
+      "Digis/RecHits not found";
   } else {
     algo_->processRH(*hbherh,*hbhedg);
   }
@@ -160,7 +174,8 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iEvent.getByLabel(hcalDigiLabel_,hodg);
   if (!hodg.isValid()) {
     // can't find it!
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HO Digis/RecHits not found";
+    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HO Digis/RecHits "
+      "not found";
   } else {
     algo_->processDigi(*hodg);
     hoDigiCnt_ += hodg->size();
@@ -169,7 +184,8 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iEvent.getByLabel(hoRHLabel_,horh);
   if (!horh.isValid()) {
     // can't find it!
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HO Digis/RecHits not found";
+    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HO Digis/RecHits "
+      "not found";
   } else {
     algo_->processRH(*horh,*hodg);
   }
@@ -180,13 +196,15 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     edm::LogWarning("HcalHOTBPlotAnal::analyze") << "EB rec hits not found";
   } else {
     algo_->processRH(*ebrh);
+    ebCnt_ += ebrh->size();
   }
   edm::Handle<HFDigiCollection> hfdg;
   iEvent.getByLabel(hcalDigiLabel_,hfdg);
 
   if (!hfdg.isValid()) {
     // can't find it!
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HF Digis/RecHits not found";
+    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HF Digis/RecHits "
+      "not found";
   } else {
     algo_->processDigi(*hfdg);
     hfDigiCnt_ += hfdg->size();
@@ -206,7 +224,8 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     edm::Handle<HcalCalibDigiCollection> calibdg;
     iEvent.getByLabel(hcalDigiLabel_,calibdg);
     if (!calibdg.isValid()) {
-      edm::LogWarning("HcalHOTBPlotAnal::analyze") << "Hcal Calib Digis not found";
+      edm::LogWarning("HcalHOTBPlotAnal::analyze") << "Hcal Calib Digis not "
+	"found";
     } else {
       algo_->processDigi(*calibdg,calibFC2GeV_);
     }
@@ -217,13 +236,14 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 }
 
 
-// ------------ method called once each job just after ending the event loop  ------------
+// ------ method called once each job just after ending the event loop  ------
 void 
 HcalHOTBPlotAnal::endJob()
 {
   std::cout << "avg number of HB digis: " << hbDigiCnt_/double(evtCnt_) << '\n'
 	    << "avg number of HO digis: " << hoDigiCnt_/double(evtCnt_) << '\n'
-	    << "avg number of HF digis: " << hfDigiCnt_/double(evtCnt_) << '\n';
+	    << "avg number of HF digis: " << hfDigiCnt_/double(evtCnt_) << '\n'
+	    << "avg number of EB recHits: " << ebCnt_/double(evtCnt_) << '\n';
 
   algo_->end();
 }

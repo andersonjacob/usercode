@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.5 2010/06/21 07:47:58 mansj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.1 2011/07/20 11:33:58 andersj Exp $
 //
 //
 
@@ -76,6 +76,8 @@ HcalQLPlotAnalAlgos::HcalQLPlotAnalAlgos(const edm::ParameterSet& histoParams) :
   dataTree->Branch("BH2adc", &BH2adc_, "BH2adc/D");
   dataTree->Branch("BH3adc", &BH3adc_, "BH3adc/D");
   dataTree->Branch("BH4adc", &BH4adc_, "BH4adc/D");
+  dataTree->Branch("HBTableEta", &HBTableEta, "HBTableEta/D");
+  dataTree->Branch("HBTablePhi", &HBTablePhi, "HBTablePhi/D");
   dataTree->Branch("maxEtaHO", &maxEtaHO, "maxEtaHO/I");
   dataTree->Branch("maxPhiHO", &maxPhiHO, "maxPhiHO/I");
   dataTree->Branch("maxEtaHB", &maxEtaHB, "maxEtaHB/I");
@@ -86,15 +88,19 @@ HcalQLPlotAnalAlgos::HcalQLPlotAnalAlgos(const edm::ParameterSet& histoParams) :
   dataTree->Branch("HBE", HBE, name);
   sprintf(name, "HOE[%d][%d]/D", maxDim, maxDim);
   dataTree->Branch("HOE", HOE, name);
+  sprintf(name, "EBE[%d][%d]/D", ebMaxEta, ebMaxPhi);
+  dataTree->Branch("EBE", EBE, name);
 
   EBLego = fs->make<TH2F>("eblego", "EBLego", 33, -16.5, 16.5, 72, 0.5, 72.5);
   HBLego = fs->make<TH2F>("hblego", "HBLego", 33, -16.5, 16.5, 72, 0.5, 72.5);
   HOLego = fs->make<TH2F>("holego", "HOLego", 33, -16.5, 16.5, 72, 0.5, 72.5);
-  EBLegoFine = fs->make<TH2F>("eblegofine", "EBLegoFine", 100, -100.5, -0.5,
+  EBLegoFine = fs->make<TH2F>("eblegofine", "EBLegoFine", 85, 0.5, 85.5,
 			      20, 0.5, 20.5);
 
-  EBieta = fs->make<TH1F>("ebieta", "ebieta", 100, -100.5, -0.5);
+  EBieta = fs->make<TH1F>("ebieta", "ebieta", 85, 0.5, 85.5);
   EBiphi = fs->make<TH1F>("ebiphi", "ebiphi", 20, 0.5, 20.5);
+
+  HBEnergy = fs->make<TH1F>("HBEnergy", "HB Energy", 100, 0., 1000.);
 }
 
 
@@ -202,6 +208,11 @@ void HcalQLPlotAnalAlgos::processBeamCounters()
     BH4adc_ = qadc->BH4adc();
   }
   //dataTree->Fill();
+}
+
+void HcalQLPlotAnalAlgos::setHBTableEtaPhi( double eta, double phi ) {
+  HBTableEta = eta;
+  HBTablePhi = phi;
 }
 
 void HcalQLPlotAnalAlgos::processRH(const HBHERecHitCollection& hbherhc,
@@ -350,14 +361,24 @@ void HcalQLPlotAnalAlgos::processRH(const EcalRecHitCollection& ebrhc)
 {
   EcalRecHitCollection::const_iterator it;
 
-  if (triggerID_ == HcalQLPlotHistoMgr::BEAM)
-    for (it = ebrhc.begin(); it != ebrhc.end(); ++it) {
-      EBDetId id(it->id());
-      EBLego->Fill(id.tower_ieta(), id.tower_iphi(), it->energy());
-      EBieta->Fill(id.ieta(), it->energy());
+  for (int e=0; e<ebMaxEta; ++e)
+    for (int p=0; p<ebMaxPhi; ++p)
+      EBE[e][p] = 0.;
+
+  for (it = ebrhc.begin(); it != ebrhc.end(); ++it) {
+    EBDetId id(it->id());
+    int absEta = abs(id.ieta());
+    if (triggerID_ == HcalQLPlotHistoMgr::BEAM) {
+      EBLego->Fill(abs(id.tower_ieta()), id.tower_iphi(), it->energy());
+      EBieta->Fill(absEta, it->energy());
       EBiphi->Fill(id.iphi(), it->energy());
-      EBLegoFine->Fill(id.ieta(), id.iphi(), it->energy());
+      EBLegoFine->Fill(absEta, id.iphi(), it->energy());
     }
+    if ( (id.iphi() < ebMaxPhi) && (id.iphi() >= 0) &&
+	 (absEta < ebMaxEta) && (absEta >= 0) ) {
+      EBE[absEta][id.iphi()] += it->energy();
+    }
+  }
 }
 
 void HcalQLPlotAnalAlgos::processDigi(const HBHEDigiCollection& hbhedigic)
