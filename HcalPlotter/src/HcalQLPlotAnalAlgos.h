@@ -79,11 +79,14 @@ private:
   double S1adc_, S2adc_, S3adc_, S4adc_;
   double BH1adc_, BH2adc_, BH3adc_, BH4adc_;
   double HBTableEta, HBTablePhi;
-  int maxEtaHO, maxPhiHO, maxEtaHB, maxPhiHB;
-  double HOE1, HBE1;
+  int ietaTable, iphiTable;
+  int maxEtaHO, maxPhiHO, maxEtaHB, maxPhiHB, maxEtaEB, maxPhiEB;
+  int NHBdigis, NHOdigis, NEBrecHits;
+  double HOE1, HBE1, EBE1;
   double HOE[maxDim][maxDim];
   double HBE[maxDim][maxDim][maxDepth];
   double EBE[ebMaxEta][ebMaxPhi];
+  double HBE9, HOE9, EBE25, EBE81, EBE225;
   std::map< HcalDetId, std::vector< int > > pedMap_;
 };
 

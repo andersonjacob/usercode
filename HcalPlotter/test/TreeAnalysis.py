@@ -76,9 +76,14 @@ def EcalEnergyAround(hits, ieta, iphi, radius = 2):
                 energy += hits[index]
     return energy
 
-def qualityCuts(event):
+def passesCuts(event):
+    #is beam
     if (event.triggerID != 4):
         return False
+    # event is complete
+    if (event.NHBdigis != 72) or (event.NHOdigis != 34):
+        return False
+    # is a pion
     if (event.VMBadc > 50):
         return False
     return True
@@ -93,7 +98,8 @@ outFile = TFile(opts.outputFile, 'recreate')
 
 HBHist = TH1F("HBHist", "HB Energy", 100, 0., 1000.)
 HOHist = TH1F("HOHist", "HO Energy", 100, 0., 500.)
-EBHist = TH1F("EBHist", "EB Energy", 100, 0., 120.)
+EBHist = TH1F("EBHist", "EB Energy", 60, 0., 120.)
+BarrelHist = TH1F("BarrelHist", "HB+EB Energy", 100, 0., 200.)
 VMBHist = TH1F("VMBHist", "Back Muon Veto", 100, 0., 500.)
 
 dataTree = inFile.Get("plotanal/dataTree");
@@ -102,7 +108,7 @@ for event in dataTree:
     EvtN += 1
     ## if EvtN > 1:
     ##     break
-    if not qualityCuts(event):
+    if not passesCuts(event):
         continue
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
@@ -117,8 +123,8 @@ for event in dataTree:
     
     VMBHist.Fill(event.VMBadc)
 
-    EB25 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi)
-    EBHist.Fill(EB25)
+    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)
+    EBHist.Fill(EB81)
     ## rowCnt = 0
     ## for hit in event.EBE:
     ##     print '{0:0.2f} '.format(hit),
@@ -143,7 +149,9 @@ for event in dataTree:
     ##         print '\n'
     ##         dCnt = 0
     ## print "HB9: {0:0.4f}".format(HB9)
-            
+
+    BarrelHist.Fill(HB9/5.183+EB81)
+    
     HO9 = HcalEnergyAround(event.HOE, ieta, iphi)
     HOHist.Fill(HO9)
     ## rowCnt = 0
@@ -163,8 +171,10 @@ f = TFile(outFile.GetName())
 HBHist = f.Get('HBHist')
 HOHist = f.Get('HOHist')
 EBHist = f.Get('EBHist')
+BarrelHist = f.Get("BarrelHist")
 VMBHist = f.Get('VMBHist')
 
+c1 = TCanvas("c1", "HB Hist")
 HBHist.Draw()
-c2 = TCanvas("c2", "c2")
-VMBHist.Draw()
+c2 = TCanvas("c2", "Barrel Hist")
+BarrelHist.Draw()
