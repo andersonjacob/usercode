@@ -56,9 +56,12 @@ process.ecalEBunpacker.syncCheck = cms.bool(False)
 process.ecalEBunpacker.orderedFedList = cms.vint32(610)
 process.ecalEBunpacker.silentMode = cms.untracked.bool(False)
 
-import RecoLocalCalo.EcalRecProducers.ecalFixedAlphaBetaFitUncalibRecHit_cfi
+import RecoLocalCalo.EcalRecProducers.ecalRatioUncalibRecHit_cfi
+process.ecalUncalibHit = RecoLocalCalo.EcalRecProducers.ecalRatioUncalibRecHit_cfi.ecalRatioUncalibRecHit.clone()
 
-process.ecalUncalibHit = RecoLocalCalo.EcalRecProducers.ecalFixedAlphaBetaFitUncalibRecHit_cfi.ecalFixedAlphaBetaFitUncalibRecHit.clone()
+## import RecoLocalCalo.EcalRecProducers.ecalFixedAlphaBetaFitUncalibRecHit_cfi
+
+## process.ecalUncalibHit = RecoLocalCalo.EcalRecProducers.ecalFixedAlphaBetaFitUncalibRecHit_cfi.ecalFixedAlphaBetaFitUncalibRecHit.clone()
 
 process.ecalUncalibHit.EBdigiCollection = 'ecalEBunpacker:ebDigis'
 process.ecalUncalibHit.EEdigiCollection = 'ecalEBunpacker:eeDigis'
