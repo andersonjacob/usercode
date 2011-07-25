@@ -14,7 +14,7 @@ parser.add_option("-m", "--mip", metavar="MIPE", dest='mip',
                   type='float', help='RecHit GeV/MIP', default=0.81)
 (options, args) = parser.parse_args()
 
-import pyroot_logon
+#import pyroot_logon
 import root_logon
 
 from ROOT import gROOT
@@ -26,8 +26,8 @@ from ROOT import TFile, TTree, gPad, TFitter, kBlue, kGreen, \
      setData, hookupMinuit, makeHOFunc
 
 dataf = TFile(args[0])
-hcalhits = TTree()
-dataf.GetObject("hcalhits", hcalhits)
+dataTree = TTree()
+dataf.GetObject('plotanal/dataTree', dataTree)
 
 mipE = options.mip
 lblHB = 'HB_E'
