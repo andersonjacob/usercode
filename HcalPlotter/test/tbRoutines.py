@@ -17,7 +17,7 @@ def phi2iphi(phi):
 
 def HcalIndex(ieta, iphi, depth = 0):
     if (ieta < maxDim) and (iphi < maxDim) and (depth < maxDepth) and \
-       (ieta >= 0) and (iphi >= 0) and (depth >= 0):
+       (ieta > 0) and (iphi > 0) and (depth > 0):
         if depth < 1:
             index = ieta*maxDim + iphi
         else:
@@ -30,7 +30,7 @@ def HcalIndex(ieta, iphi, depth = 0):
 
 def EcalIndex(ieta, iphi):
     if (ieta < ebMaxEta) and (iphi < ebMaxPhi) and \
-       (ieta >= 0) and (iphi >= 0):
+       (ieta > 0) and (iphi > 0):
         return ieta*ebMaxPhi + iphi
     else:
         return -1
@@ -48,12 +48,28 @@ def HcalEnergyAround(hits, ieta, iphi, depth = 0, radius = 1, calib = None):
                 energy += hitE
     return energy
 
-def EcalEnergyAround(hits, ieta, iphi, radius = 2):
+def EcalEnergyAround(hits, ieta, iphi, radius = 2, calib = None):
     energy = 0.
     for e in range(ieta-radius,ieta+radius+1):
         for p in range(iphi-radius,iphi+radius+1):
             index = EcalIndex(e,p)
             ## print '({0},{1}) => index: {2}'.format(e,p,index)
             if (index >= 0) and (index < len(hits)):
-                energy += hits[index]
+                hitE = hits[index]
+                if calib:
+                    hitE *= calib[index]
+                energy += hitE
     return energy
+
+import cPickle as pickle
+
+def loadCalibration(fileName):
+    pkf = open(fileName, 'rb')
+    newConst = pickle.load(pkf)
+    pkf.close()
+    return newConst
+
+def storeCalibration(theConst, fileName):
+    pkf = open(fileName, 'wb')
+    pickle.dump(theConst, pkf)
+    pkf.close()
