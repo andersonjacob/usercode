@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------
+// -*- mode: C++ -*- ----------------------------------------------------
 //
 //	Convoluted Landau and Gaussian Fitting Function
 //         (using ROOT's Landau and Gauss functions)
@@ -131,26 +131,27 @@ TF1 *langaufit(TH1F *his, Double_t *fitrange, Double_t *startvalues, Double_t *p
 TF1 * langaupedfit( TH1F * his, TH1F * ped_his, 
 		    double * fitparams, double * fiterrs,
 		    double& chisqr, int& ndf) {
-  ped_his->Fit("gaus", "0");
-  TF1 * ped = ped_his->GetFunction("gaus");
+  //ped_his->Fit("gaus", "0");
+  //TF1 * ped = ped_his->GetFunction("gaus");
 
    Double_t fr[2];
    Double_t sv[7], pllo[7], plhi[7];
 
-   fr[0] = his->GetBinCenter(his->GetMaximumBin())*0.35;
-   fr[1] = his->GetBinCenter(his->GetMaximumBin())*3.0;
+   fr[0] = his->GetBinLowEdge(1);
+   fr[1] = his->GetBinLowEdge(his->GetNbinsX());
 
-   sv[0] = 12.; pllo[0] = 1.0; plhi[0] = 30.;
+   sv[0] = his->GetRMS()/4.; pllo[0] = 0.0; plhi[0] = 30.; // Landau width
    sv[1] = his->GetBinCenter(his->GetMaximumBin()); 
+   pllo[1] = fr[0], plhi[1] = fr[1]; // Landau MPV
    std::cout << "mpv: " << sv[1]
 	     << " min: " << fr[0] << " max: " << fr[1] 
 	     << '\n';
-   pllo[1] = fr[0], plhi[1] = fr[1];
-   sv[2] = his->Integral(); pllo[2] = 1.; plhi[2] = 1.e7;
-   sv[3] = 3.; pllo[3] = 0.1; plhi[3] = 100.;
-   sv[4] = 0.; pllo[4] = 0.; plhi[4] = his->Integral()*0.1;
-   sv[5] = ped->GetParameter(1);
-   sv[6] = ped->GetParameter(2);
+   sv[2] = his->Integral(); pllo[2] = 1.; plhi[2] = 1.e7; //Landau Area
+   sv[3] = 3.; pllo[3] = 0.; plhi[3] = 100.; // gaussian convolution sigma
+   sv[4] = his->GetBinContent(his->FindBin(ped_his->GetMean())); 
+   pllo[4] = 0.; plhi[4] = 0.; // pedestal amplitude
+   sv[5] = ped_his->GetMean(); // pedestal mean
+   sv[6] = ped_his->GetRMS(); // pedestal sigma
 
    TString fitName(TString::Format("fit_%s", his->GetName()));
    TF1 * fitf = new TF1(fitName, langauped, fr[0], fr[1], 7);
@@ -163,6 +164,7 @@ TF1 * langaupedfit( TH1F * his, TH1F * ped_his,
      case 2:
      case 3:
      case 4:
+       fitf->SetParameter(i, sv[i]);
        fitf->SetParLimits(i, pllo[i], plhi[i]);
        break;
      case 5:
@@ -177,9 +179,12 @@ TF1 * langaupedfit( TH1F * his, TH1F * ped_his,
      if (i < 5) {
        fitparams[i] = fitf->GetParameter(i);
        fiterrs[i] = fitf->GetParError(i);
-     } else {
-       fitparams[i] = ped->GetParameter(i-4);
-       fiterrs[i] = ped->GetParError(i-4);
+     } else if (i == 5) {
+       fitparams[i] = ped_his->GetMean();
+       fiterrs[i] = ped_his->GetMeanError();
+     } else if (i == 6) {
+       fitparams[i] = ped_his->GetRMS();
+       fiterrs[i] = ped_his->GetRMSError();
      }
    }
 
