@@ -14,6 +14,8 @@ parser.add_option('-c', '--calib', dest='initCalib', default='',
                   help='starting calibration')
 parser.add_option('-o', dest='outputFile', default='analysis.root',
                   help='output filename')
+parser.add_option('-d', '--depths', action='store_true', dest='depths',
+                  default=False, help='use 4 HB depths')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -53,18 +55,25 @@ calibData = {}
 calibDataHO = {}
 
 trivialConst = [100./518.3]*maxDim*maxDim*maxDepth
-trivialConst[0] = 1.4
+trivialConst[0] = 1.18
 if len(opts.initCalib) > 0:
     trivialConst = loadCalibration(opts.initCalib)
 
 trivialConstHO = [1./2.]*maxDim*maxDim
 
+HBdepths = 2
+if (opts.depths):
+    HBdepths = maxDepth
+
+beamE = 100.
+
+prelim = TH1F('prelimE', 'prelim energy', 100, 0., 200.)
+passed = 0
+
 for event in dataTree:
     EvtN += 1
     ## if EvtN > 1:
     ##     break
-    if not passesCuts(event):
-        continue
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
 
@@ -75,23 +84,38 @@ for event in dataTree:
         print 'record:',EvtN,
         print '(ieta,iphi):', '({0},{1})'.format(ieta,iphi),
         print 'Xtal (ieta,iphi): ({0},{1})'.format(ecalXtalieta,ecalXtaliphi)
-    
+
+    if not passesCuts(event):
+        continue
+    # don't optimize the long low tails
+    HB9 = 0.
+    for d in range(1, HBdepths):
+        HB9 += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
+                                calib=trivialConst)
+
     EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)\
            *trivialConst[0]
 
+    prelim.Fill(HB9+EB81)
+    if (HB9+EB81) < (beamE/2.):
+        # print 'HB9:',HB9
+        continue
+
+    passed += 1
     if not ('EB81' in calibData.keys()):
         calibData['EB81'] = []
     calibData['EB81'].append(EB81)
 
     for e in range(ieta-1, ieta+2):
         for p in range(iphi-1, iphi+2):
-            tmpIndex = HcalIndex(e,p,1)
-            if (tmpIndex > 0):
-                Ename = 'hb_{0}_{1}_{2}'.format(e,p,1)
-                if not (Ename in calibData.keys()):
-                    calibData[Ename] = []
-                calibData[Ename].append(event.HBE[tmpIndex]*\
-                                        trivialConst[tmpIndex])
+            for d in range(1, HBdepths):
+                tmpIndex = HcalIndex(e,p,d)
+                if (tmpIndex > 0):
+                    Ename = 'hb_{0}_{1}_{2}'.format(e,p,d)
+                    if not (Ename in calibData.keys()):
+                        calibData[Ename] = []
+                    calibData[Ename].append(event.HBE[tmpIndex]*\
+                                            trivialConst[tmpIndex])
             ## tmpIndex = HcalIndex(e,p)
             ## if (tmpIndex > 0):
             ##     Ename = 'ho_{0}_{1}'.format(e,p)
@@ -100,7 +124,12 @@ for event in dataTree:
             ## calibDataHO[Ename].append(event.HOE[tmpIndex]*\
             ##                         trivialConstHO[tmpIndex])
 
-minner = runMinimization(calibData, 100.)
+print 'events passed:', passed,\
+      'events kept:', len(calibData[calibData.keys()[0]])
+
+#prelim.Draw()
+
+minner = runMinimization(calibData, beamE)
 
 calibConst = list(trivialConst)
 calibConstHO = list(trivialConstHO)
@@ -108,6 +137,7 @@ calibConstHO = list(trivialConstHO)
 for par in range(1, minner.GetNumberTotalParameters()):
     parName = minner.GetParName(par)
     parVal = minner.GetParameter(par)
+    parErr = minner.GetParError(par)
     digits = re.findall('\d+', parName)
     calIndex = -1
     initConst = 1.0
@@ -116,8 +146,10 @@ for par in range(1, minner.GetNumberTotalParameters()):
         print 'Ecal calib:',
         if calIndex >= 0:
             parVal *= trivialConst[calIndex]
+            parErr *= trivialConst[calIndex]
             calibConst[calIndex] = parVal
-            print '{0:0.3f} index: {1}'.format(parVal, calIndex)
+            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
+                                                             parVal/parErr)
     elif (parName[:2] == 'hb'):
         calieta = int(digits[0])
         caliphi = int(digits[1])
@@ -126,8 +158,10 @@ for par in range(1, minner.GetNumberTotalParameters()):
         print 'HB ({0},{1},{2}):'.format(calieta,caliphi,caldepth),
         if calIndex > 0:
             parVal *= trivialConst[calIndex]
+            parErr *= trivialConst[calIndex]
             calibConst[calIndex] = parVal
-            print '{0:0.3f} index: {1}'.format(parVal, calIndex)
+            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
+                                                             parVal/parErr)
     elif (parName[:2] == 'ho'):
         calieta = int(digits[0])
         caliphi = int(digits[1])
@@ -135,8 +169,10 @@ for par in range(1, minner.GetNumberTotalParameters()):
         print 'HO ({0},{1},4):'.format(calieta,caliphi),
         if calIndex > 0:
             parVal *= trivialConstHO[calIndex]
-            calibConstHO[calIndex] = parVal
-            print '{0:0.3f} index: {1}'.format(parVal, calIndex)
+            parErr *= trivialConst[calIndex]
+            calibConst[calIndex] = parVal
+            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
+                                                             parVal/parErr)
 
 BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., 200.)
 BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., 200.)
@@ -147,8 +183,6 @@ for event in dataTree:
     EvtN += 1
     ## if EvtN > 1:
     ##     break
-    if not passesCuts(event):
-        continue
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
 
@@ -160,14 +194,18 @@ for event in dataTree:
         print '(ieta,iphi):', '({0},{1})'.format(ieta,iphi),
         print 'Xtal (ieta,iphi): ({0},{1})'.format(ecalXtalieta,ecalXtaliphi)
     
+    if not passesCuts(event):
+        continue
+
     EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)
     sumBefore = EB81*trivialConst[0]
     sumAfter = EB81*calibConst[0]
 
-    sumAfter += HcalEnergyAround(event.HBE, ieta, iphi, depth=1,
-                                 calib=calibConst)
-    sumBefore += HcalEnergyAround(event.HBE, ieta, iphi, depth=1,
-                                  calib=trivialConst)
+    for d in range(1, HBdepths):
+        sumAfter += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
+                                     calib=calibConst)
+        sumBefore += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
+                                      calib=trivialConst)
     
     BarrelBefore.Fill(sumBefore)
     BarrelAfter.Fill(sumAfter)

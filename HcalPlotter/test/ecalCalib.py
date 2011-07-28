@@ -26,8 +26,8 @@ from tbRoutines import *
 from minRoutine import runMinimization
 import re
 
-centralXtalEta = 42
-centralXtalPhi = 3
+centralXtalEta = 32
+centralXtalPhi = 7
 
 def passesCuts(event):
     #is beam
@@ -41,10 +41,10 @@ def passesCuts(event):
         return False
     if (event.HBE9 > 40):
         return False
-    if (event.maxEtaEB != centralXtalEta):
-        return False
-    if (event.maxPhiEB != centralXtalPhi):
-        return False
+    ## if (event.maxEtaEB != centralXtalEta):
+    ##     return False
+    ## if (event.maxPhiEB != centralXtalPhi):
+    ##     return False
     return True
 
 myBlue = kBlue + 2
@@ -59,31 +59,35 @@ dataTree = inFile.Get("plotanal/dataTree")
 
 calibData = {}
 
-trivialConst = [1.25]*ebMaxPhi*ebMaxEta
+trivialConst = [1.18]*ebMaxPhi*ebMaxEta
 if len(opts.initCalib) > 0:
     trivialConst = loadCalibration(opts.initCalib)
 
-calibRadius = 2
+calibRadius = 3
 
 for event in dataTree:
     EvtN += 1
     ## if EvtN > 1:
     ##     break
-    if not passesCuts(event):
-        continue
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
 
-    ecalXtalieta = event.maxEtaEB
-    ecalXtaliphi = event.maxPhiEB
+    ecalXtalieta = centralXtalEta
+    ecalXtaliphi = centralXtalPhi
+    ## ecalXtalieta = ieta*5-2
+    ## ecalXtaliphi = ebMaxPhi - (iphi*5-2)
 
     if EvtN%500 == 1:
         print 'record:',EvtN,
         print '(ieta,iphi):', '({0},{1})'.format(ieta,iphi),
         print 'Xtal (ieta,iphi): ({0},{1})'.format(ecalXtalieta,ecalXtaliphi)
-    
-    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)
-    if EB81 < 20:
+
+    if not passesCuts(event):
+        continue
+
+    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4,
+                            calib = trivialConst)
+    if EB81 < 75:
         continue
 
     for e in range(ecalXtalieta-calibRadius, ecalXtalieta+calibRadius+1):
@@ -104,6 +108,7 @@ calibConst = list(trivialConst)
 for par in range(1,minner.GetNumberTotalParameters()):
     parName = minner.GetParName(par)
     parVal = minner.GetParameter(par)
+    parErr = minner.GetParError(par)
     calIndex = -1
     if (parName[:2] == 'eb'):
         digits = re.findall('\d+', parName)
@@ -114,11 +119,14 @@ for par in range(1,minner.GetNumberTotalParameters()):
         print 'EB ({0},{1}):'.format(calieta,caliphi),
         if calIndex > 0:
             parVal *= trivialConst[calIndex]
-            calibConst[calIndex] = parVal
-            print '{0:0.3f} index: {1}'.format(parVal, calIndex)
+            parErr *= trivialConst[calIndex]
+            if (parVal/parErr > 2.0):
+                calibConst[calIndex] = parVal
+            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
+                                                             parVal/parErr)
 
-BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 200, 0., 200.)
-BarrelAfter = TH1F("BarrelAfter", "Barrel After", 200, 0., 200.)
+BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 200, 0., 100.)
+BarrelAfter = TH1F("BarrelAfter", "Barrel After", 200, 0., 100.)
 BarrelBefore.SetLineColor(myBlue)
 
 EvtN = 0
