@@ -201,17 +201,17 @@ TF1 * preFitHisto( TH1F * his, double * fitparams, double * fiterrs,
    Double_t fr[2];
    Double_t sv[4], pllo[4], plhi[4];
 
-   fr[0] = his->GetBinCenter(his->GetMaximumBin())*0.35;
-   fr[1] = his->GetBinCenter(his->GetMaximumBin())*3.0;
+   fr[0] = his->GetBinLowEdge(1);
+   fr[1] = his->GetBinLowEdge(his->GetNbinsX());
 
-   sv[0] = 12.; pllo[0] = 1.0; plhi[0] = 30.;
+   sv[0] = his->GetRMS()/4.; pllo[0] = 0.0; plhi[0] = 30.; // Landau width
    sv[1] = his->GetBinCenter(his->GetMaximumBin()); 
+   pllo[1] = fr[0], plhi[1] = fr[1]; // Landau MPV
    std::cout << "mpv: " << sv[1]
 	     << " min: " << fr[0] << " max: " << fr[1] 
 	     << '\n';
-   pllo[1] = fr[0], plhi[1] = fr[1];
-   sv[2] = his->Integral(); pllo[2] = 1.; plhi[2] = 1.e5;
-   sv[3] = 3.; pllo[3] = 0.1; plhi[3] = 100.;
+   sv[2] = his->Integral(); pllo[2] = 1.; plhi[2] = 1.e7; //Landau Area
+   sv[3] = 3.; pllo[3] = 0.; plhi[3] = 100.; // gaussian convolution sigma
 
    return langaufit(his, fr, sv, pllo, plhi, fitparams, fiterrs, &chisqr, &ndf);
 

@@ -62,12 +62,20 @@ HOTower = 'HOE[{0}][{1}]'.format(ieta,iphi)
 print 'HO tower ({0},{1})'.format(ieta,iphi)
 
 dataTree.Draw('{0}'.format(HOTower), pedCut, 'goff')
-minPed = TMath.MinElement(dataTree.GetSelectedRows(), dataTree.GetV1())
-maxPed = TMath.MaxElement(dataTree.GetSelectedRows(), dataTree.GetV1())
-pedRms = TMath.RMS(dataTree.GetSelectedRows(), dataTree.GetV1())
+
+havePeds = False
+if (dataTree.GetSelectedRows() > 1):
+    minPed = TMath.MinElement(dataTree.GetSelectedRows(), dataTree.GetV1())
+    maxPed = TMath.MaxElement(dataTree.GetSelectedRows(), dataTree.GetV1())
+    pedRms = TMath.RMS(dataTree.GetSelectedRows(), dataTree.GetV1())
+    havePeds = True
+else:
+    minPed = -6.
+    maxPed = 10.
+    pedRms = 2.0*2.
 
 minMip = int(minPed) - 0.5
-maxMip = int(minPed + pedRms*30) + 0.5
+maxMip = int(maxPed + pedRms*30) + 0.5
 Nbins = int((maxMip - minMip)/2. + 0.5)
 
 minPed = minPed - 1.5
@@ -88,15 +96,20 @@ ped_hist.SetLineColor(myBlue)
 sig_hist = gDirectory.Get('sig_hist')
 
 gROOT.ProcessLine('.L langaus.C+')
-from ROOT import langaupedfit, langaupro, Double, Long
+from ROOT import langaupedfit, langaupro, Double, Long, preFitHisto
 from array import array
 
 fpar = array('d', [0.]*7)
 fparerr = array('d', [0.]*7)
+fpar[6] = pedRms
 
 chisqr = Double(0.)
 ndf = Long(0)
-fit = langaupedfit(sig_hist, ped_hist, fpar, fparerr, chisqr, ndf)
+
+if havePeds:
+    fit = langaupedfit(sig_hist, ped_hist, fpar, fparerr, chisqr, ndf)
+else:
+    fit = preFitHisto(sig_hist, fpar, fparerr, chisqr, ndf)
 
 maxx = Double(0.)
 fwhm = Double(0.)
