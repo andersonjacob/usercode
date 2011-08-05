@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.1 2011/07/20 11:33:58 andersj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.3 2011/07/22 13:54:42 andersj Exp $
 //
 //
 
@@ -38,6 +38,8 @@
 #include "TH1.h"
 #include "TH2F.h"
 #include "TH1F.h"
+#include "TString.h"
+#include "TF1.h"
 //
 // constants, enums and typedefs
 //
@@ -132,6 +134,10 @@ void HcalQLPlotAnalAlgos::end(void)
 	   << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
 
   std::map< HcalDetId, std::vector<int> >::iterator ped;
+  TString idStr = "  ";
+  TH1 * phist = 0;
+  char hname[100];
+  double avgPed = 0.;
 
   for (ped = pedMap_.begin(); ped != pedMap_.end(); ++ped) {
     
@@ -145,27 +151,48 @@ void HcalQLPlotAnalAlgos::end(void)
     case HcalBarrel: 
       pedFile << "HB   "; 
       gainFile << "HB   "; 
+      idStr = "HB";
       break;
     case HcalEndcap: 
       pedFile << "HE   ";
       gainFile << "HE   ";
+      idStr = "HE";
       break;
     case HcalForward: 
       pedFile << "HF   "; 
       gainFile << "HF   "; 
+      idStr = "HF";
       break;
     case HcalOuter: 
       pedFile << "HO   "; 
       gainFile << "HO   "; 
+      idStr = "HO";
       break;
     default: 
       pedFile << "   ";
       gainFile << "   ";
+      idStr = "";
     }
     pedFile << std::setprecision(4);
     gainFile << std::setprecision(4);
     for (int cap = 0; cap < 4; ++cap) {
-      pedFile << ped->second[cap]/double(ped->second[cap+4]) << "   ";
+      sprintf(hname, "ADC_%s_%d_%d_%d_cap_%d", idStr.Data(), ped->first.ieta(), 
+	      ped->first.iphi(), ped->first.depth(), cap);
+      phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
+					 HcalQLPlotHistoMgr::PEDESTAL, true);
+
+      avgPed = ped->second[cap]/double(ped->second[cap+4]);
+      if (phist) {
+	phist->Fit("gaus", "q");
+	TF1 * gaus = phist->GetFunction("gaus");
+	if (gaus)
+	  avgPed = gaus->GetParameter(1);
+	else {
+	  std::cout << "gaus function not found." << std::endl;
+	  phist->Print();
+	}
+      } 
+      pedFile << avgPed << "   ";
       gainFile << 1.0 << "   ";
     }
     pedFile << std::hex << ped->first.rawId() << std::dec << '\n';
@@ -450,6 +477,9 @@ void HcalQLPlotAnalAlgos::processDigi(const HBHEDigiCollection& hbhedigic)
     HcalElectronicsId eid (it->elecId());
 
     TH1* phist=histos_->GetAHistogram(id,eid,HcalQLPlotHistoMgr::PULSE,triggerID_);
+
+    char hname[100];
+
     if (phist){
       for (int bin=0; bin<it->size(); bin++)
 	phist->Fill(bin*1.0,(*it)[bin].nominal_fC());
@@ -468,6 +498,12 @@ void HcalQLPlotAnalAlgos::processDigi(const HBHEDigiCollection& hbhedigic)
 	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
       }
       for (int ts = 0; ts < it->size(); ++ts) {
+	sprintf(hname, "ADC_HB_%d_%d_%d_cap_%d", id.ieta(), id.iphi(), 
+		id.depth(), (*it)[ts].capid());
+	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
+					   triggerID_);
+	if (phist)
+	  phist->Fill((*it)[ts].adc());
 	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
 	peds->second[(*it)[ts].capid()+4] += 1;
       }
@@ -497,6 +533,8 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
       }
     }
 
+    char hname[100];
+
     if (triggerID_ == HcalQLPlotHistoMgr::PEDESTAL) {
       phist=histos_->GetAHistogram(id,eid,HcalQLPlotHistoMgr::ADC,triggerID_);
       if (phist){
@@ -510,6 +548,13 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
 	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
       }
       for (int ts = 0; ts < it->size(); ++ts) {
+	sprintf(hname, "ADC_HO_%d_%d_%d_cap_%d", id.ieta(), id.iphi(), 
+		id.depth(), (*it)[ts].capid());
+	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
+					   triggerID_);
+	if (phist)
+	  phist->Fill((*it)[ts].adc());
+
 	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
 	peds->second[(*it)[ts].capid()+4] += 1;
       }

@@ -131,8 +131,8 @@ TF1 *langaufit(TH1F *his, Double_t *fitrange, Double_t *startvalues, Double_t *p
 TF1 * langaupedfit( TH1F * his, TH1F * ped_his, 
 		    double * fitparams, double * fiterrs,
 		    double& chisqr, int& ndf) {
-  //ped_his->Fit("gaus", "0");
-  //TF1 * ped = ped_his->GetFunction("gaus");
+  ped_his->Fit("gaus", "0Q");
+  TF1 * ped = ped_his->GetFunction("gaus");
 
    Double_t fr[2];
    Double_t sv[7], pllo[7], plhi[7];
@@ -150,8 +150,10 @@ TF1 * langaupedfit( TH1F * his, TH1F * ped_his,
    sv[3] = 3.; pllo[3] = 0.; plhi[3] = 100.; // gaussian convolution sigma
    sv[4] = his->GetBinContent(his->FindBin(ped_his->GetMean())); 
    pllo[4] = 0.; plhi[4] = 0.; // pedestal amplitude
-   sv[5] = ped_his->GetMean(); // pedestal mean
-   sv[6] = ped_his->GetRMS(); // pedestal sigma
+   // sv[5] = ped_his->GetMean(); // pedestal mean
+   // sv[6] = ped_his->GetRMS(); // pedestal sigma
+   sv[5] = ped->GetParameter(1); // pedestal mean
+   sv[6] = ped->GetParameter(2); // pedestal sigma
 
    TString fitName(TString::Format("fit_%s", his->GetName()));
    TF1 * fitf = new TF1(fitName, langauped, fr[0], fr[1], 7);

@@ -16,6 +16,8 @@ parser.add_option('-o', dest='outputFile', default='analysis.root',
                   help='output filename')
 parser.add_option('-d', '--depths', action='store_true', dest='depths',
                   default=False, help='use 4 HB depths')
+parser.add_option('-s', '--sipm', action='store_true', dest='sipm',
+                  default=False, help='sipm S/N assumption')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -75,7 +77,10 @@ else:
     pedRms = 2.0*2.
 
 minMip = int(minPed) - 0.5
-maxMip = int(maxPed + pedRms*30) + 0.5
+if opts.sipm:
+    maxMip = int(maxPed + pedRms*80) + 0.5
+else :
+    maxMip = int(maxPed + pedRms*30) + 0.5
 Nbins = int((maxMip - minMip)/2. + 0.5)
 
 minPed = minPed - 1.5

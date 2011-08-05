@@ -26,7 +26,8 @@ public:
   static std::string nameForFlavor(HistType ht);
   static std::string nameForEvent(EventType et);
 
-  TH1* GetAHistogramImpl(const char *name, HistType ht, EventType et);
+  TH1* GetAHistogramImpl(const char *name, HistType ht, EventType et,
+			 bool noCreate = false);
 private:
 
   TFileDirectory* pedHistDir;

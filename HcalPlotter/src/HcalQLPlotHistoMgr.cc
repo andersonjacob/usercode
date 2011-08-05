@@ -99,7 +99,8 @@ TH1* HcalQLPlotHistoMgr::GetAHistogram(const HcalCalibDetId& id,
 }
 
 TH1* HcalQLPlotHistoMgr::GetAHistogramImpl(const char *name,
-					   HistType ht, EventType et)
+					   HistType ht, EventType et,
+					   bool noCreate)
 {
   TFileDirectory* td;
   std::string fqn(name);
@@ -122,6 +123,8 @@ TH1* HcalQLPlotHistoMgr::GetAHistogramImpl(const char *name,
 
   std::map<std::string,TH1*>::iterator q=hists_.find(fqn);
   if (q!=hists_.end()) retval=q->second;
+
+  if (noCreate) return retval;
 
   int bins=0; double lo=0, hi=0;
 
@@ -206,6 +209,7 @@ TH1* HcalQLPlotHistoMgr::GetAHistogramImpl(const char *name,
       try {
 	lo=histoParams_.getParameter<double>("pedADClo");
 	hi=histoParams_.getParameter<double>("pedADChi");
+	bins = int(hi-lo + 0.5);
       } catch (std::exception& e) { // can't find it!
 	edm::LogError("HcalQLPlotHistoMgr::GetAHistogram") << "Parameter(s) pedADClo/hi not found.";
 	throw e;
