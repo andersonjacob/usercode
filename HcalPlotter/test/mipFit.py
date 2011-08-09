@@ -18,6 +18,10 @@ parser.add_option('-d', '--depths', action='store_true', dest='depths',
                   default=False, help='use 4 HB depths')
 parser.add_option('-s', '--sipm', action='store_true', dest='sipm',
                   default=False, help='sipm S/N assumption')
+parser.add_option('--phi', type='int', default=0, dest='phi',
+                  help='override table iphi position')
+parser.add_option('--eta', type='int', default=0, dest='eta',
+                  help='override table ieta position')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -53,9 +57,14 @@ for event in dataTree:
     break
 
 ieta = eta2ieta(event.HBTableEta)
+if (opts.eta > 0):
+    ieta = opts.eta
 iphi = phi2iphi(event.HBTablePhi)
+if (opts.phi > 0):
+    iphi = opts.phi
 
 qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
+#qualCut = '(NHOdigis=={0})'.format(HODigis)
 pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
 sigCut = '(triggerID==4)&&{0}'.format(qualCut)
 

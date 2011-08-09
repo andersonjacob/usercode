@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.3 2011/07/22 13:54:42 andersj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.4 2011/08/05 21:08:09 andersj Exp $
 //
 //
 
@@ -183,14 +183,16 @@ void HcalQLPlotAnalAlgos::end(void)
 
       avgPed = ped->second[cap]/double(ped->second[cap+4]);
       if (phist) {
-	phist->Fit("gaus", "q");
-	TF1 * gaus = phist->GetFunction("gaus");
-	if (gaus)
-	  avgPed = gaus->GetParameter(1);
-	else {
-	  std::cout << "gaus function not found." << std::endl;
-	  phist->Print();
+	int minBin = (phist->GetMaximumBin()-2 > 0) 
+	  ? phist->GetMaximumBin()-2 : 1;
+	double sum = 0.;
+	double sumw = 0.;
+	for (int bin = minBin; bin < minBin+5; ++bin) {
+	  sum += phist->GetBinCenter(bin)*phist->GetBinContent(bin);
+	  sumw += phist->GetBinContent(bin);
 	}
+	if (sumw > 0.)
+	  avgPed = sum/sumw;
       } 
       pedFile << avgPed << "   ";
       gainFile << 1.0 << "   ";
