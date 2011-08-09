@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.5 2011/08/09 14:41:24 andersj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.6 2011/08/09 16:17:30 andersj Exp $
 //
 //
 
@@ -193,7 +193,7 @@ void HcalQLPlotAnalAlgos::end(void)
 	}
 	if (sumw > 0.)
 	  avgPed = sum/sumw;
-      } 
+      }
       pedFile << avgPed << "   ";
       gainFile << 1.0 << "   ";
     }
@@ -557,7 +557,7 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
 	if (phist)
 	  phist->Fill((*it)[ts].nominal_fC());
 
-	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
+	peds->second[(*it)[ts].capid()] += (*it)[ts].nominal_fC();
 	peds->second[(*it)[ts].capid()+4] += 1;
       }
     }

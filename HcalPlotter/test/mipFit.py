@@ -63,8 +63,8 @@ iphi = phi2iphi(event.HBTablePhi)
 if (opts.phi > 0):
     iphi = opts.phi
 
-qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
-#qualCut = '(NHOdigis=={0})'.format(HODigis)
+#qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
+qualCut = '(NHOdigis=={0})'.format(HODigis)
 pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
 sigCut = '(triggerID==4)&&{0}'.format(qualCut)
 
