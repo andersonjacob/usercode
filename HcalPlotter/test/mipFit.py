@@ -83,7 +83,10 @@ if (dataTree.GetSelectedRows() > 1):
 else:
     minPed = -6.
     maxPed = 10.
-    pedRms = 2.0*2.
+    pedRms = 1.2
+
+minPed = minPed - 1.5
+maxPed = maxPed + 1.5
 
 minMip = int(minPed) - 0.5
 if opts.sipm:
@@ -92,8 +95,6 @@ else :
     maxMip = int(maxPed + pedRms*30) + 0.5
 Nbins = int((maxMip - minMip)/2. + 0.5)
 
-minPed = minPed - 1.5
-maxPed = maxPed + 1.5
 
 print 'ped min: {0:0.2f} max: {1:0.2f}'.format(minPed,maxPed), \
       'sig min: {0:0.1f} max: {1:0.1f}'.format(minMip, maxMip)
@@ -122,6 +123,7 @@ ndf = Long(0)
 
 if havePeds:
     fit = langaupedfit(sig_hist, ped_hist, fpar, fparerr, chisqr, ndf)
+    #fit = preFitHisto(sig_hist, fpar, fparerr, chisqr, ndf)
 else:
     fit = preFitHisto(sig_hist, fpar, fparerr, chisqr, ndf)
 
@@ -132,10 +134,13 @@ langaupro(fpar,maxx, fwhm)
 
 c1 = TCanvas('c1', 'pedestal')
 ped_hist.Draw()
-ped_hist.Fit('gaus')
+ped = ped_hist.GetFunction('ped')
+if ped:
+    ped.Draw('same')
 
 c2 = TCanvas('c2', 'signal')
 sig_hist.Draw()
+#c2.Update()
 fit.Draw('same')
 
 print 'for HO ({0},{1}) MIP MPV: {2:0.2f}'.format(ieta,iphi,maxx-fpar[5]),\

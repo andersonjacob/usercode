@@ -131,15 +131,31 @@ TF1 *langaufit(TH1F *his, Double_t *fitrange, Double_t *startvalues, Double_t *p
 TF1 * langaupedfit( TH1F * his, TH1F * ped_his, 
 		    double * fitparams, double * fiterrs,
 		    double& chisqr, int& ndf) {
-  ped_his->Fit("gaus", "0Q");
-  TF1 * ped = ped_his->GetFunction("gaus");
+  //ped_his->Fit("gaus", "0Q");
+  //TF1 * ped = ped_his->GetFunction("gaus");
 
-   Double_t fr[2];
-   Double_t sv[7], pllo[7], plhi[7];
+  int maxBin = ped_his->GetMaximumBin();
 
-   fr[0] = his->GetBinLowEdge(1);
-   fr[1] = his->GetBinLowEdge(his->GetNbinsX());
+  TF1 * ped = new TF1("ped", "gaus", ped_his->GetBinLowEdge(1),
+		      ped_his->GetBinLowEdge(maxBin+3));
 
+  ped_his->Fit(ped, "R0");
+
+  double sum = 0.;
+  double sumw = 0.;
+  double sum2 = 0.;
+  for (int b=1; b < maxBin + 3; ++b) {
+    sum += ped_his->GetBinCenter(b)*ped_his->GetBinContent(b);
+    sumw += ped_his->GetBinContent(b);
+    sum2 += ped_his->GetBinCenter(b)*ped_his->GetBinCenter(b)*ped_his->GetBinContent(b);
+  }
+
+  Double_t fr[2];
+  Double_t sv[7], pllo[7], plhi[7];
+  
+  fr[0] = his->GetBinLowEdge(1);
+  fr[1] = his->GetBinLowEdge(his->GetNbinsX());
+   
    sv[0] = his->GetRMS()/4.; pllo[0] = 0.0; plhi[0] = 30.; // Landau width
    sv[1] = his->GetBinCenter(his->GetMaximumBin()); 
    pllo[1] = fr[0], plhi[1] = fr[1]; // Landau MPV
@@ -148,10 +164,10 @@ TF1 * langaupedfit( TH1F * his, TH1F * ped_his,
 	     << '\n';
    sv[2] = his->Integral(); pllo[2] = 1.; plhi[2] = 1.e7; //Landau Area
    sv[3] = 3.; pllo[3] = 0.; plhi[3] = 100.; // gaussian convolution sigma
-   sv[4] = his->GetBinContent(his->FindBin(ped_his->GetMean())); 
-   pllo[4] = 0.; plhi[4] = 0.; // pedestal amplitude
-   // sv[5] = ped_his->GetMean(); // pedestal mean
-   // sv[6] = ped_his->GetRMS(); // pedestal sigma
+   sv[4] = 0.; //his->GetBinContent(his->FindBin(ped_his->GetBinCenter(maxBin)));
+   pllo[4] = -1000.; plhi[4] = his->GetBinContent(his->GetMaximumBin()); // pedestal amplitude
+   sv[5] = sum/sumw; // pedestal mean
+   sv[6] = sqrt((sum2-sum*sum/sumw)/(sumw-1)); // pedestal sigma
    sv[5] = ped->GetParameter(1); // pedestal mean
    sv[6] = ped->GetParameter(2); // pedestal sigma
 
