@@ -42,15 +42,16 @@ hcales_ascii = cms.ESSource("HcalTextCalibrations",
                                 )
                             )
 
-hcales_hardcode = cms.ESSource("HcalHardcodeCalibrations",
-                               toGet = cms.untracked.vstring(
-                                                             # 'Pedestals',
-                                                             'PedestalWidths', 'LutMetadata',
-                                                             # 'Gains',
-                                                             'GainWidths', 'LUTCorrs', 
-                                                             'PFCorrs', 'QIEData',
-                                                             'L1TriggerObjects','ZSThresholds','DcsValues',
-                                                             'ChannelQuality','RespCorrs','TimeCorrs')
-                               ) 
+hcales_hardcode = cms.ESSource(
+    "HcalHardcodeCalibrations",
+    toGet = cms.untracked.vstring(
+        # 'Pedestals',
+        'PedestalWidths', 'LutMetadata',
+        # 'Gains',
+        'GainWidths', 'LUTCorrs', 
+        'PFCorrs', 'QIEData',
+        'L1TriggerObjects','ZSThresholds','DcsValues',
+        'ChannelQuality','RespCorrs','TimeCorrs')
+    )
 
 #hcalprefer = cms.ESPrefer("

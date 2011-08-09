@@ -138,6 +138,6 @@ c2 = TCanvas('c2', 'signal')
 sig_hist.Draw()
 fit.Draw('same')
 
-print 'for HO ({0},{1}) MIP MPV: {2:0.2f}'.format(ieta,iphi,maxx),\
+print 'for HO ({0},{1}) MIP MPV: {2:0.2f}'.format(ieta,iphi,maxx-fpar[5]),\
       'FWHM: {0:0.2f}'.format(fwhm),\
       'S/N: {0:0.2f}'.format((maxx-fpar[5])/fpar[6])

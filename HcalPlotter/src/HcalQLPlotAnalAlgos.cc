@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.4 2011/08/05 21:08:09 andersj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.5 2011/08/09 14:41:24 andersj Exp $
 //
 //
 
@@ -555,7 +555,7 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
 	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
 					   triggerID_);
 	if (phist)
-	  phist->Fill((*it)[ts].adc());
+	  phist->Fill((*it)[ts].nominal_fC());
 
 	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
 	peds->second[(*it)[ts].capid()+4] += 1;
