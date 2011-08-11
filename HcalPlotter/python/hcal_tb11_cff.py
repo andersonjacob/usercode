@@ -13,9 +13,9 @@ hcales_ascii = cms.ESSource(
             file = cms.FileInPath('andersj/HcalPlotter/data/tb2011_map_HBHO_HPD.txt')
             ),
         ## cms.PSet(
-        ## object = cms.string('ElectronicsMap'),
-        ## file = cms.FileInPath('andersj/HcalPlotter/data/tb2011_map_HB_HPD_HO_SiPM.txt')
-        ## ),
+        ##     object = cms.string('ElectronicsMap'),
+        ##     file = cms.FileInPath('andersj/HcalPlotter/data/tb2011_map_HB_HPD_HO_SiPM.txt')
+        ##     ),
         ## cms.PSet(
         ## object = cms.string('ElectronicsMap'),
         ## file = cms.FileInPath('andersj/HcalPlotter/data/tb2011_map_HB_SiPM_HO_SiPM_2.txt')
@@ -25,9 +25,9 @@ hcales_ascii = cms.ESSource(
         ## file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HBHO_HPD.txt')
         ## ),
         ## cms.PSet(
-        ## object = cms.string('Pedestals'),
-        ## file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_SiPM.txt')
-        ## ),
+        ##     object = cms.string('Pedestals'),
+        ##     file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_SiPM.txt')
+        ##     ),
         cms.PSet(
             object = cms.string('Pedestals'),
             file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_HPD_SiPM.txt')

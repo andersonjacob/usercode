@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnal.cc,v 1.2 2011/07/21 12:09:22 andersj Exp $
+// $Id: HcalTBWritePedestals.cc,v 1.1 2011/08/10 19:55:40 andersj Exp $
 //
 //
 
@@ -47,6 +47,8 @@
 
 #include "TBDataFormats/HcalTBObjects/interface/HcalTBTriggerData.h"
 #include "andersj/HcalPlotter/src/HcalQLPlotHistoMgr.h"
+
+#include "TF1.h"
 //
 // class declaration
 //
@@ -79,7 +81,7 @@ private:
   HcalQLPlotHistoMgr::EventType triggerID_;
   HcalQLPlotHistoMgr *histos_;
 
-  std::map< HcalDetId, std::vector< int > > pedMap_;
+  std::map< HcalDetId, std::vector<double>[4] > pedMap_;
 };
 
 //
@@ -89,7 +91,7 @@ private:
 namespace HcalTBWritePedestalImpl {
   template<class digic, class const_iter>
   inline void processDigi(const digic& digis, const edm::EventSetup& eventSetup,
-			  std::map< HcalDetId, std::vector<int> >& pedMap,
+			  std::map< HcalDetId, std::vector<double>[4] >& pedMap,
 			  HcalQLPlotHistoMgr::EventType triggerID,
 			  HcalQLPlotHistoMgr * histos) {
     edm::ESHandle<HcalDbService> conditions;
@@ -131,12 +133,11 @@ namespace HcalTBWritePedestalImpl {
 	    phist->Fill(bin*1.0,tool[bin]);	
 	}
 
-	std::map< HcalDetId, std::vector<int> >::iterator peds = 
+	std::map< HcalDetId, std::vector<double>[4] >::iterator peds = 
 	  pedMap.find(id);
 	if (peds == pedMap.end()) {
-	  std::vector<int> holder;
-	  for (int i=0; i<8; ++i) holder.push_back(0);
-	  peds = pedMap.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
+	  std::vector<double> holder[4];
+	  peds = pedMap.insert(std::pair< HcalDetId, std::vector<double>[4] >(id, holder)).first;
 	}
 	for (int ts = 0; ts < tool.size(); ++ts) {
 	  sprintf(hname, "ADC_%s_%d_%d_%d_cap_%d", detName.Data(), id.ieta(), 
@@ -145,8 +146,7 @@ namespace HcalTBWritePedestalImpl {
 					    triggerID);
 	  if (phist)
 	    phist->Fill(tool[ts]);
-	  peds->second[(*it)[ts].capid()] += tool[ts];
-	  peds->second[(*it)[ts].capid()+4] += 1;
+	  peds->second[(*it)[ts].capid()].push_back(tool[ts]);
        }
   
       }
@@ -295,7 +295,7 @@ HcalTBWritePedestals::endJob()
   gainFile << "#U ADC\n"
 	   << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
 
-  std::map< HcalDetId, std::vector<int> >::iterator ped;
+  std::map< HcalDetId, std::vector<double>[4] >::iterator ped;
   TString idStr = "  ";
   TH1 * phist = 0;
   char hname[100];
@@ -338,23 +338,51 @@ HcalTBWritePedestals::endJob()
     pedFile << std::setprecision(4);
     gainFile << std::setprecision(4);
     for (int cap = 0; cap < 4; ++cap) {
+      std::vector<double> & peds = ped->second[cap];
+      double pedSum = 0;
+      int pedCnt = 0;
+      std::vector<double>::iterator p;
+
       sprintf(hname, "ADC_%s_%d_%d_%d_cap_%d", idStr.Data(), ped->first.ieta(), 
 	      ped->first.iphi(), ped->first.depth(), cap);
       phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
 					 HcalQLPlotHistoMgr::PEDESTAL, true);
 
-      avgPed = ped->second[cap]/double(ped->second[cap+4]);
+      double minimum(-0.5);
+      double maximum(1e5);
+      int maxBin(0);
+
       if (phist) {
-	int minBin = (phist->GetMaximumBin()-2 > 0) 
-	  ? phist->GetMaximumBin()-2 : 1;
-	double sum = 0.;
-	double sumw = 0.;
-	for (int bin = minBin; bin < minBin+5; ++bin) {
-	  sum += phist->GetBinCenter(bin)*phist->GetBinContent(bin);
-	  sumw += phist->GetBinContent(bin);
+	maxBin = phist->GetMaximumBin();
+	minimum = phist->GetBinLowEdge(maxBin-1);
+	maximum = phist->GetBinLowEdge(maxBin+2);
+      }
+
+      for (p = peds.begin(); p != peds.end(); ++p) {
+	if ((*p > minimum) && (*p < maximum)) {
+	  pedSum += *p;
+	  ++pedCnt;
 	}
-	if (sumw > 0.)
-	  avgPed = sum/sumw;
+      }
+
+      avgPed = pedSum/pedCnt;
+      if (phist) {
+      	// int maxBin = phist->GetMaximumBin();
+      	TF1 * ped = new TF1("ped", "gaus", phist->GetBinLowEdge(1),
+      			    phist->GetBinLowEdge(maxBin+2));
+      	phist->Fit(ped, "RQ");
+
+      	// int minBin = (phist->GetMaximumBin()-2 > 0) 
+      	//   ? phist->GetMaximumBin()-2 : 1;
+      	// double sum = 0.;
+      	// double sumw = 0.;
+      	// for (int bin = minBin; bin < minBin+5; ++bin) {
+      	//   sum += phist->GetBinCenter(bin)*phist->GetBinContent(bin);
+      	//   sumw += phist->GetBinContent(bin);
+      	// }
+      	// if (sumw > 0.)
+      	//   avgPed = sum/sumw;
+      	avgPed = ped->GetParameter(1);
       }
       pedFile << avgPed << "   ";
       gainFile << 1.0 << "   ";
