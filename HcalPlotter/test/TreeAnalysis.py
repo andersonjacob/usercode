@@ -10,6 +10,14 @@ parser.add_option('-b', action='store_true', dest='noX', default=False,
                   help='no X11 windows')
 parser.add_option('-o', dest='outputFile', default='analysis.root',
                   help='output filename')
+parser.add_option('-n', action='store_true', dest='noStartup', default=False,
+                  help='do not run statup scripts')
+parser.add_option('-c', '--calib', dest='initCalib', default='',
+                  help='starting calibration')
+parser.add_option('-d', '--depths', action='store_true', dest='depths',
+                  default=False, help='use 4 HB depths')
+parser.add_option('--beam', dest='beamE', type='float', default=100.,
+                  help='beam energy')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -26,11 +34,12 @@ def passesCuts(event):
     if (event.triggerID != 4):
         return False
     # event is complete
-    if (event.NHBdigis != 72) or (event.NHOdigis != 34):
+    if (event.NHBdigis != 72) or (event.NHOdigis != 34) or \
+           (event.NEBrecHits != 1700):
         return False
-    # is a pion
-    if (event.VMBadc > 50):
-        return False
+    ## # is a pion
+    ## if (event.VMBadc > 50):
+    ##     return False
     return True
 
 myBlue = kBlue + 2
@@ -41,20 +50,28 @@ inFile = TFile(args[0])
 
 outFile = TFile(opts.outputFile, 'recreate')
 
-HBHist = TH1F("HBHist", "HB Energy", 100, 0., 1000.)
-HOHist = TH1F("HOHist", "HO Energy", 100, 0., 500.)
-EBHist = TH1F("EBHist", "EB Energy", 60, 0., 120.)
-BarrelHist = TH1F("BarrelHist", "HB+EB Energy", 100, 0., 200.)
+HBHist = TH1F("HBHist", "HB Energy", 100, 0., opts.beamE*1.6)
+HOHist = TH1F("HOHist", "HO Energy", 200, 0., opts.beamE*1.5)
+EBHist = TH1F("EBHist", "EB Energy", 100, 0., opts.beamE*1.2)
+BarrelHist = TH1F("BarrelHist", "HB+EB Energy", 100, 0., opts.beamE*2)
 VMBHist = TH1F("VMBHist", "Back Muon Veto", 100, 0., 500.)
 
 dataTree = inFile.Get("plotanal/dataTree");
 
+calibConst = [1.0]*maxDim*maxDim*maxDepth
+calibConstHO = [1./34.61]*maxDim*maxDim
+
+if len(opts.initCalib) > 0:
+    calibConst = loadCalibration(opts.initCalib)
+
+HBdepths = 2
+if (opts.depths):
+    HBdepths = maxDepth
+
 for event in dataTree:
     EvtN += 1
-    ## if EvtN > 1:
+    ## if EvtN > 2:
     ##     break
-    if not passesCuts(event):
-        continue
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
 
@@ -66,9 +83,13 @@ for event in dataTree:
         print '(ieta,iphi):', '({0},{1})'.format(ieta,iphi),
         print 'Xtal (ieta,iphi): ({0},{1})'.format(ecalXtalieta,ecalXtaliphi)
     
+    if not passesCuts(event):
+        continue
+
     VMBHist.Fill(event.VMBadc)
 
-    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)
+    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)\
+           *calibConst[0]
     EBHist.Fill(EB81)
     ## rowCnt = 0
     ## for hit in event.EBE:
@@ -79,7 +100,10 @@ for event in dataTree:
     ##         rowCnt = 0
     ## print "EB25: {0:0.4f}".format(EB25)
 
-    HB9 = HcalEnergyAround(event.HBE, ieta, iphi, depth=1)
+    HB9 = 0.
+    for d in range(1, HBdepths):
+        HB9 += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
+                                calib=calibConst)
     HBHist.Fill(HB9)
     ## rowCnt = 0
     ## dCnt = 0
@@ -95,9 +119,9 @@ for event in dataTree:
     ##         dCnt = 0
     ## print "HB9: {0:0.4f}".format(HB9)
 
-    BarrelHist.Fill(HB9/5.183+EB81)
+    BarrelHist.Fill(HB9 + EB81)
     
-    HO9 = HcalEnergyAround(event.HOE, ieta, iphi)
+    HO9 = HcalEnergyAround(event.HOE, ieta, iphi, calib=calibConstHO, radius = 0)
     HOHist.Fill(HO9)
     ## rowCnt = 0
     ## for hit in event.HOE:
@@ -119,7 +143,12 @@ EBHist = f.Get('EBHist')
 BarrelHist = f.Get("BarrelHist")
 VMBHist = f.Get('VMBHist')
 
-c1 = TCanvas("c1", "HB Hist")
+c1 = TCanvas("c1", "HB Energy")
 HBHist.Draw()
-c2 = TCanvas("c2", "Barrel Hist")
+c2 = TCanvas("c2", "Barrel Energy")
 BarrelHist.Draw()
+c3 = TCanvas('c3', 'HO MIPs')
+c3.SetLogy()
+HOHist.Draw()
+c4 = TCanvas('c4', 'EB Energy')
+EBHist.Draw()

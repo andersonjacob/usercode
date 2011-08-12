@@ -16,6 +16,8 @@ parser.add_option('-o', dest='outputFile', default='analysis.root',
                   help='output filename')
 parser.add_option('-d', '--depths', action='store_true', dest='depths',
                   default=False, help='use 4 HB depths')
+parser.add_option('--beam', dest='beamE', type='float', default=100.,
+                  help='beam energy')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -34,7 +36,8 @@ def passesCuts(event):
     if (event.triggerID != 4):
         return False
     # event is complete
-    if (event.NHBdigis != 72) or (event.NHOdigis != 34):
+    if (event.NHBdigis != 72) or (event.NHOdigis != 34) or \
+           (event.NEBrecHits != 1700):
         return False
     # is a pion
     if (event.VMBadc > 50):
@@ -65,7 +68,7 @@ HBdepths = 2
 if (opts.depths):
     HBdepths = maxDepth
 
-beamE = 100.
+beamE = opts.beamE
 
 prelim = TH1F('prelimE', 'prelim energy', 100, 0., 200.)
 passed = 0
@@ -138,41 +141,31 @@ for par in range(1, minner.GetNumberTotalParameters()):
     parName = minner.GetParName(par)
     parVal = minner.GetParameter(par)
     parErr = minner.GetParError(par)
+    parSignif = parVal/parErr
     digits = re.findall('\d+', parName)
     calIndex = -1
     initConst = 1.0
     if (parName[:2] == 'EB'):
         calIndex = 0
         print 'Ecal calib:',
-        if calIndex >= 0:
-            parVal *= trivialConst[calIndex]
-            parErr *= trivialConst[calIndex]
-            calibConst[calIndex] = parVal
-            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
-                                                             parVal/parErr)
     elif (parName[:2] == 'hb'):
         calieta = int(digits[0])
         caliphi = int(digits[1])
         caldepth = int(digits[2])
         calIndex = HcalIndex(calieta,caliphi,caldepth)
         print 'HB ({0},{1},{2}):'.format(calieta,caliphi,caldepth),
-        if calIndex > 0:
-            parVal *= trivialConst[calIndex]
-            parErr *= trivialConst[calIndex]
-            calibConst[calIndex] = parVal
-            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
-                                                             parVal/parErr)
     elif (parName[:2] == 'ho'):
         calieta = int(digits[0])
         caliphi = int(digits[1])
         calIndex = HcalIndex(calieta,caliphi)
         print 'HO ({0},{1},4):'.format(calieta,caliphi),
-        if calIndex > 0:
-            parVal *= trivialConstHO[calIndex]
-            parErr *= trivialConst[calIndex]
-            calibConst[calIndex] = parVal
-            print '{0:0.3f} "significance": {1:0.4f}'.format(parVal,
-                                                             parVal/parErr)
+    if calIndex >= 0:
+        parSignif = abs(1.0-parVal)/parErr
+        parVal *= trivialConst[calIndex]
+        #parErr *= trivialConst[calIndex]
+        print 'initial value: {0:0.3f}'.format(trivialConst[calIndex]),
+        calibConst[calIndex] = parVal
+        print 'new value: {0:0.3f} "significance": {1:0.4f}'.format(parVal, parSignif)
 
 BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., 200.)
 BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., 200.)

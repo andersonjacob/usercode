@@ -17,7 +17,7 @@ def phi2iphi(phi):
 
 def HcalIndex(ieta, iphi, depth = 0):
     if (ieta < maxDim) and (iphi < maxDim) and (depth < maxDepth) and \
-       (ieta > 0) and (iphi > 0) and (depth > 0):
+       (ieta > 0) and (iphi > 0) and (depth >= 0):
         if depth < 1:
             index = ieta*maxDim + iphi
         else:
