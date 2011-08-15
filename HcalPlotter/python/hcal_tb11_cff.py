@@ -24,14 +24,14 @@ hcales_ascii = cms.ESSource(
         ## object = cms.string('Pedestals'),
         ## file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HBHO_HPD.txt')
         ## ),
-        ## cms.PSet(
-        ##     object = cms.string('Pedestals'),
-        ##     file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_SiPM.txt')
-        ##     ),
         cms.PSet(
             object = cms.string('Pedestals'),
-            file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_HPD_SiPM.txt')
+            file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_SiPM.txt')
             ),
+        ## cms.PSet(
+        ##     object = cms.string('Pedestals'),
+        ##     file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_HO_HPD_SiPM.txt')
+        ##     ),
         cms.PSet(
             object = cms.string('Gains'),
             file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HBHO_HPD.txt')
@@ -46,13 +46,13 @@ hcales_ascii = cms.ESSource(
 hcales_hardcode = cms.ESSource(
     "HcalHardcodeCalibrations",
     toGet = cms.untracked.vstring(
-        #'Pedestals',
+        'Pedestals',
         'PedestalWidths', 'LutMetadata',
-        #'Gains',
+        'Gains',
         'GainWidths', 'LUTCorrs', 
         'PFCorrs', 'QIEData',
         'L1TriggerObjects','ZSThresholds','DcsValues',
         'ChannelQuality','RespCorrs','TimeCorrs')
     )
 
-#hcalprefer = cms.ESPrefer("
+hcalasciiprefer = cms.ESPrefer("HcalTextCalibrations", "hcales_ascii")
