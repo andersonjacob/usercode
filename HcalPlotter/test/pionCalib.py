@@ -24,7 +24,7 @@ import root_logon
 #import pyroot_fwlite.py
 
 from ROOT import TFile, TH1F, TCanvas, TLorentzVector, kRed, kBlue, TMath, \
-     TBrowser, TH2F, TTree
+     TBrowser, TH2F, TTree, TH1
 ## from array import array
 
 from tbRoutines import *
@@ -57,7 +57,7 @@ dataTree = inFile.Get("plotanal/dataTree");
 calibData = {}
 calibDataHO = {}
 
-trivialConst = [100./518.3]*maxDim*maxDim*maxDepth
+trivialConst = [1.0]*maxDim*maxDim*maxDepth
 trivialConst[0] = 1.18
 if len(opts.initCalib) > 0:
     trivialConst = loadCalibration(opts.initCalib)
@@ -70,7 +70,8 @@ if (opts.depths):
 
 beamE = opts.beamE
 
-prelim = TH1F('prelimE', 'prelim energy', 100, 0., 200.)
+TH1.SetDefaultBufferSize(10000)
+prelim = TH1F('prelimE', 'prelim energy', 100, 0., -1.)
 passed = 0
 
 for event in dataTree:
@@ -100,9 +101,9 @@ for event in dataTree:
            *trivialConst[0]
 
     prelim.Fill(HB9+EB81)
-    if (HB9+EB81) < (beamE/2.):
-        # print 'HB9:',HB9
-        continue
+##     if (HB9+EB81) < (beamE/2.):
+##         # print 'HB9:',HB9
+##         continue
 
     passed += 1
     if not ('EB81' in calibData.keys()):
@@ -113,6 +114,12 @@ for event in dataTree:
         for p in range(iphi-1, iphi+2):
             for d in range(1, HBdepths):
                 tmpIndex = HcalIndex(e,p,d)
+                if p > 5:
+                    tmpIndex = -1
+                if p < 2:
+                    tmpIndex = -1
+                if e < 1:
+                    tmpIndex = -1
                 if (tmpIndex > 0):
                     Ename = 'hb_{0}_{1}_{2}'.format(e,p,d)
                     if not (Ename in calibData.keys()):
@@ -130,6 +137,7 @@ for event in dataTree:
 print 'events passed:', passed,\
       'events kept:', len(calibData[calibData.keys()[0]])
 
+prelim.BufferEmpty()
 #prelim.Draw()
 
 minner = runMinimization(calibData, beamE)
@@ -164,11 +172,12 @@ for par in range(1, minner.GetNumberTotalParameters()):
         parVal *= trivialConst[calIndex]
         #parErr *= trivialConst[calIndex]
         print 'initial value: {0:0.3f}'.format(trivialConst[calIndex]),
-        calibConst[calIndex] = parVal
+        if (parSignif > 0.5):
+            calibConst[calIndex] = parVal
         print 'new value: {0:0.3f} "significance": {1:0.4f}'.format(parVal, parSignif)
 
-BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., 200.)
-BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., 200.)
+BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., -1.0)
+BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., -1.0)
 BarrelBefore.SetLineColor(myBlue)
 
 EvtN = 0
@@ -203,10 +212,14 @@ for event in dataTree:
     BarrelBefore.Fill(sumBefore)
     BarrelAfter.Fill(sumAfter)
 
-c1 = TCanvas('c1', 'after')
-BarrelAfter.Draw()
+BarrelBefore.BufferEmpty()
+c1 = TCanvas('c1', 'prelim')
+prelim.Draw()
+BarrelAfter.BufferEmpty()
 c2 = TCanvas('c2', 'before')
 BarrelBefore.Draw()
+c3 = TCanvas('c3', 'after')
+BarrelAfter.Draw()
 
 storageFile = 'hb_calib_{0}_{1}.pkl'.format(ieta, iphi)
 storeCalibration(calibConst, storageFile)

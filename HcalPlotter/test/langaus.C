@@ -162,10 +162,10 @@ TF1 * langaupedfit( TH1F * his, TH1F * ped_his,
    std::cout << "mpv: " << sv[1]
 	     << " min: " << fr[0] << " max: " << fr[1] 
 	     << '\n';
-   sv[2] = his->Integral(); pllo[2] = 1.; plhi[2] = 1.e7; //Landau Area
-   sv[3] = 3.; pllo[3] = 0.; plhi[3] = 100.; // gaussian convolution sigma
-   sv[4] = 0.; //his->GetBinContent(his->FindBin(ped_his->GetBinCenter(maxBin)));
-   pllo[4] = -1000.; plhi[4] = his->GetBinContent(his->GetMaximumBin()); // pedestal amplitude
+   sv[2] = his->Integral()*2.; pllo[2] = 1.; plhi[2] = 1.e7; //Landau Area
+   sv[3] = 1.2; pllo[3] = 0.; plhi[3] = 100.; // gaussian convolution sigma
+   sv[4] = his->GetBinContent(his->FindBin(ped_his->GetBinCenter(maxBin)));
+   pllo[4] = -10.; plhi[4] = his->GetBinContent(his->GetMaximumBin())*1.5; // pedestal amplitude
    sv[5] = sum/sumw; // pedestal mean
    sv[6] = sqrt((sum2-sum*sum/sumw)/(sumw-1)); // pedestal sigma
    sv[5] = ped->GetParameter(1); // pedestal mean
@@ -188,6 +188,7 @@ TF1 * langaupedfit( TH1F * his, TH1F * ped_his,
      case 5:
      case 6:
        fitf->FixParameter(i, sv[i]);
+       break;
      }
    }
    fitf->SetParNames("Width", "MP", "Area", "sigma", "ped_A", "ped_mean", "ped_sigma");

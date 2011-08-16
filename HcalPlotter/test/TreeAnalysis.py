@@ -18,6 +18,8 @@ parser.add_option('-d', '--depths', action='store_true', dest='depths',
                   default=False, help='use 4 HB depths')
 parser.add_option('--beam', dest='beamE', type='float', default=100.,
                   help='beam energy')
+parser.add_option('--mipHO', dest='mipHO', type='float', default=1.0,
+                  help='fC/mip in HO')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -50,16 +52,24 @@ inFile = TFile(args[0])
 
 outFile = TFile(opts.outputFile, 'recreate')
 
-HBHist = TH1F("HBHist", "HB Energy", 100, 0., opts.beamE*1.6)
+HBHist = TH1F("HBHist", "HB Energy", 100, 5., opts.beamE*1.6)
+HBHist.GetXaxis().SetTitle("HB energy (GeV)")
 HOHist = TH1F("HOHist", "HO Energy", 200, 0., opts.beamE*1.5)
-EBHist = TH1F("EBHist", "EB Energy", 100, 0., opts.beamE*1.2)
-BarrelHist = TH1F("BarrelHist", "HB+EB Energy", 100, 0., opts.beamE*2)
+HOHist.GetXaxis().SetTitle("HO energy (mips)")
+EBHist = TH1F("EBHist", "EB Energy", 100, 5., opts.beamE*1.3)
+EBHist.GetXaxis().SetTitle("EB energy (GeV)")
+BarrelHist = TH1F("BarrelHist", "HB+EB Energy", 100, 5., opts.beamE*2)
+BarrelHist.GetXaxis().SetTitle("HB+EB Energy (GeV)")
+BarrelvHO = TH2F("BarrelvHO", "HO v. EB+HB", 100, 5., opts.beamE*2,
+                 200, 2., opts.beamE*1.5);
+BarrelvHO.GetXaxis().SetTitle("EB+HB Energy (GeV)");
+BarrelvHO.GetYaxis().SetTitle("HO Energy (mips)");
 VMBHist = TH1F("VMBHist", "Back Muon Veto", 100, 0., 500.)
 
 dataTree = inFile.Get("plotanal/dataTree");
 
 calibConst = [1.0]*maxDim*maxDim*maxDepth
-calibConstHO = [1./34.61]*maxDim*maxDim
+calibConstHO = [1.]*maxDim*maxDim
 
 if len(opts.initCalib) > 0:
     calibConst = loadCalibration(opts.initCalib)
@@ -88,9 +98,14 @@ for event in dataTree:
 
     VMBHist.Fill(event.VMBadc)
 
-    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)\
-           *calibConst[0]
+    EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi,
+                            radius=4)*calibConst[0]
+
+    ## if (EB81 > 1.0):
+    ##     continue
+    
     EBHist.Fill(EB81)
+
     ## rowCnt = 0
     ## for hit in event.EBE:
     ##     print '{0:0.2f} '.format(hit),
@@ -121,8 +136,11 @@ for event in dataTree:
 
     BarrelHist.Fill(HB9 + EB81)
     
-    HO9 = HcalEnergyAround(event.HOE, ieta, iphi, calib=calibConstHO, radius = 0)
-    HOHist.Fill(HO9)
+    HOmip = HcalEnergyAround(event.HOE, ieta, iphi, calib=calibConstHO,
+                             radius = 0)/opts.mipHO
+    HOHist.Fill(HOmip)
+
+    BarrelvHO.Fill(HB9+EB81, HOmip)
     ## rowCnt = 0
     ## for hit in event.HOE:
     ##     print '{0:0.3f}\t'.format(hit),
@@ -141,6 +159,7 @@ HBHist = f.Get('HBHist')
 HOHist = f.Get('HOHist')
 EBHist = f.Get('EBHist')
 BarrelHist = f.Get("BarrelHist")
+BarrelvHO = f.Get('BarrelvHO')
 VMBHist = f.Get('VMBHist')
 
 c1 = TCanvas("c1", "HB Energy")
@@ -152,3 +171,7 @@ c3.SetLogy()
 HOHist.Draw()
 c4 = TCanvas('c4', 'EB Energy')
 EBHist.Draw()
+c5 = TCanvas('c5', 'HO v. Barrel')
+c5.SetLogz()
+BarrelvHO.Draw('boxcolz')
+

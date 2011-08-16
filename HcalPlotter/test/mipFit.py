@@ -63,8 +63,9 @@ iphi = phi2iphi(event.HBTablePhi)
 if (opts.phi > 0):
     iphi = opts.phi
 
-qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
-#qualCut = '(NHOdigis=={0})'.format(HODigis)
+#qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
+#qualCut = '(NHOdigis=={0})&&(VMBadc>50.)&&(VMFadc>100.)&&(VMFadc<1500)&&(S3adc>0.)'.format(HODigis)
+qualCut = '(NHOdigis=={0})'.format(HODigis)
 pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
 sigCut = '(triggerID==4)&&{0}'.format(qualCut)
 
@@ -85,8 +86,8 @@ else:
     maxPed = 10.
     pedRms = 1.2
 
-minPed = minPed - 1.5
-maxPed = maxPed + 1.5
+minPed = int(minPed) - 1.5
+maxPed = int(maxPed) + 1.5
 
 minMip = int(minPed) - 0.5
 if opts.sipm:
