@@ -17,28 +17,26 @@ def fitPed(hist, ws, name='x'):
     x = ws.var(name)
     #rds = ds.reduce('{1}<{0:0.2f}'.format(hist.GetBinLowEdge(maxBin+2),name))
     #rds.Print()
-    x.setRange('ped_fit', x.getMin(), hist.GetBinLowEdge(maxBin+2))
-    pedMean = RooRealVar('pedMean', 'mean_{ped}', 0., x.getMin('ped_fit'),
-                         x.getMax('ped_fit'))
+    x.setRange('ped_fit', x.getMin(), hist.GetBinLowEdge(maxBin+3))
+    pedMean = RooRealVar('pedMean', 'mean_{ped}', hist.GetBinCenter(maxBin),
+                         x.getMin(), x.getMax())
     pedMean.Print()
     pedWidth = RooRealVar('pedWidth', 'sigma_{ped}', 1., 0., 10.)
     pedWidth.Print()
     ped = RooGaussian('ped', 'ped', x, pedMean, pedWidth)
 
+    pedMean.setConstant(False)
     ped.fitTo(ws.data('ds'), RooFit.Minos(False), RooFit.Range('ped_fit'),
               RooFit.PrintLevel(0))
 
     getattr(ws, 'import')(ped)
     ## xf = x.frame(x.getMin('ped_fit'), x.getMax('ped_fit'),
     ##              int(x.getMax('ped_fit')-x.getMin('ped_fit')))
-    ## ds.plotOn(xf)
+    ## ws.data('ds').plotOn(xf)
     ## ped.plotOn(xf)
     ## xf.Draw()
     ## gPad.Update()
     ## gPad.WaitPrimitive()
-    ## ped = TF1("ped", "gaus", hist.GetBinLowEdge(1),
-    ##           hist.GetBinLowEdge(maxBin+2))
-    ## hist.Fit(ped, "LR0E")
 
 def findOnePe(hist, ws, name='x'):
     fitPed(hist, ws, name)
@@ -139,6 +137,8 @@ if __name__ == '__main__':
     #print 'minPed:',minPed,'maxPed:',maxPed
     minPed = int(minPed) - 2.5
     maxPed = int(maxPed) + 2.5
+    if (int(maxPed-minPed)/2)*2 < (maxPed-minPed):
+        maxPed += 1
     print 'minPed:',minPed,'maxPed:',maxPed
     dataTree.Draw('{0}>>pedhist({1},{2:0.1f},{3:0.1f}'.format(HOTower,
                                                               int(maxPed-minPed),
