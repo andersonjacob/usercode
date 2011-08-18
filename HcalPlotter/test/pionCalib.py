@@ -18,6 +18,10 @@ parser.add_option('-d', '--depths', action='store_true', dest='depths',
                   default=False, help='use 4 HB depths')
 parser.add_option('--beam', dest='beamE', type='float', default=100.,
                   help='beam energy')
+parser.add_option('--phi', type='int', default=0, dest='phi',
+                  help='override table iphi position')
+parser.add_option('--eta', type='int', default=0, dest='eta',
+                  help='override table ieta position')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -36,7 +40,7 @@ def passesCuts(event):
     if (event.triggerID != 4):
         return False
     # event is complete
-    if (event.NHBdigis != 72) or (event.NHOdigis != 34) or \
+    if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
            (event.NEBrecHits != 1700):
         return False
     # is a pion
@@ -62,7 +66,7 @@ trivialConst[0] = 1.18
 if len(opts.initCalib) > 0:
     trivialConst = loadCalibration(opts.initCalib)
 
-trivialConstHO = [1./2.]*maxDim*maxDim
+trivialConstHO = [1.]*maxDim*maxDim
 
 HBdepths = 2
 if (opts.depths):
@@ -74,12 +78,18 @@ TH1.SetDefaultBufferSize(10000)
 prelim = TH1F('prelimE', 'prelim energy', 100, 0., -1.)
 passed = 0
 
+resolution = beamE*sqrt(1/beamE + 0.01)
+
 for event in dataTree:
     EvtN += 1
-    ## if EvtN > 1:
+    ## if EvtN > 100:
     ##     break
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
+    if (opts.eta > 0):
+        ieta = opts.eta
+    if (opts.phi > 0):
+        iphi = opts.phi
 
     ecalXtalieta = ieta*5-2
     ecalXtaliphi = ebMaxPhi - (iphi*5-2)
@@ -100,10 +110,11 @@ for event in dataTree:
     EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)\
            *trivialConst[0]
 
+    if (HB9+EB81) < beamE * (1-2.*resolution):
+        # print 'HB9:',HB9
+        continue
+
     prelim.Fill(HB9+EB81)
-##     if (HB9+EB81) < (beamE/2.):
-##         # print 'HB9:',HB9
-##         continue
 
     passed += 1
     if not ('EB81' in calibData.keys()):
@@ -114,11 +125,8 @@ for event in dataTree:
         for p in range(iphi-1, iphi+2):
             for d in range(1, HBdepths):
                 tmpIndex = HcalIndex(e,p,d)
-                if p > 5:
-                    tmpIndex = -1
-                if p < 2:
-                    tmpIndex = -1
-                if e < 1:
+                if not isInstrumented('HB', e, p, d, isHPD=(not opts.depths)):
+                    # print 'hb_{0}_{1}_{2}'.format(e,p,d),opts
                     tmpIndex = -1
                 if (tmpIndex > 0):
                     Ename = 'hb_{0}_{1}_{2}'.format(e,p,d)
@@ -187,6 +195,10 @@ for event in dataTree:
     ##     break
     ieta = eta2ieta(event.HBTableEta)
     iphi = phi2iphi(event.HBTablePhi)
+    if (opts.eta > 0):
+        ieta = opts.eta
+    if (opts.phi > 0):
+        iphi = opts.phi
 
     ecalXtalieta = ieta*5-2
     ecalXtaliphi = ebMaxPhi - (iphi*5-2)

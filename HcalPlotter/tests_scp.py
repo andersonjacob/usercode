@@ -31,7 +31,7 @@ process.maxEvents = cms.untracked.PSet(
 )
 inFileName = 'EcalHcalCombined2011_{0:08d}.0.root'.format(RUNNUMBER)
 if not os.access('moe5/{0}'.format(inFileName), os.R_OK):
-    cmd = ['scp','daq@cmsmoe5:/data0/spool/{0}'.format(inFileName),
+    cmd = ['scp','-Cp','daq@cmsmoe5:/data0/spool/{0}'.format(inFileName),
            'moe5/{0}'.format(inFileName)]
     print ' '.join(cmd)
     subprocess.call(cmd)

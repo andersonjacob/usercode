@@ -14,14 +14,16 @@ parser.add_option('-c', '--calib', dest='initCalib', default='',
                   help='starting calibration')
 parser.add_option('-o', dest='outputFile', default='analysis.root',
                   help='output filename')
-parser.add_option('-d', '--depths', action='store_true', dest='depths',
-                  default=False, help='use 4 HB depths')
+parser.add_option('-d', '--depth', type='int', dest='depth',
+                  default=1, help='use which HB depth')
 parser.add_option('-s', '--sipm', action='store_true', dest='sipm',
                   default=False, help='sipm S/N assumption')
 parser.add_option('--phi', type='int', default=0, dest='phi',
                   help='override table iphi position')
 parser.add_option('--eta', type='int', default=0, dest='eta',
                   help='override table ieta position')
+parser.add_option('--hb', action='store_true', dest='hb', default=False,
+                  help='do HB instead of HO')
 (opts, args) = parser.parse_args()
 
 import root_logon
@@ -44,12 +46,8 @@ outFile = TFile(opts.outputFile, 'recreate')
 
 dataTree = inFile.Get("plotanal/dataTree");
 
-HBdepths = 2
-if (opts.depths):
-    HBdepths = maxDepth
-
-HBDigis = 72
-HODigis = 34
+HBDigis = 68
+HODigis = 33
 
 dataTree.SetEstimate(dataTree.GetEntries())
 
@@ -63,15 +61,19 @@ iphi = phi2iphi(event.HBTablePhi)
 if (opts.phi > 0):
     iphi = opts.phi
 
-#qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
+qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
 #qualCut = '(NHOdigis=={0})&&(VMBadc>50.)&&(VMFadc>100.)&&(VMFadc<1500)&&(S3adc>0.)'.format(HODigis)
-qualCut = '(NHOdigis=={0})'.format(HODigis)
+#qualCut = '(NHOdigis=={0})'.format(HODigis)
 pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
 sigCut = '(triggerID==4)&&{0}'.format(qualCut)
 
 HOTower = 'HOE[{0}][{1}]'.format(ieta,iphi)
+if opts.hb:
+    HOTower = 'HBE[{0}][{1}][{2}]'.format(ieta,iphi,opts.depth)
 
-print 'HO tower ({0},{1})'.format(ieta,iphi)
+print '{0}'.format(HOTower),\
+      '(eta,phi): ({0:0.2f},{1:0.2f})'.format(event.HBTableEta,
+                                              event.HBTablePhi)
 
 dataTree.Draw('{0}'.format(HOTower), pedCut, 'goff')
 
@@ -144,6 +146,6 @@ sig_hist.Draw()
 #c2.Update()
 fit.Draw('same')
 
-print 'for HO ({0},{1}) MIP MPV: {2:0.2f}'.format(ieta,iphi,maxx-fpar[5]),\
+print 'for {0} MIP MPV: {1:0.2f}'.format(HOTower,maxx-fpar[5]),\
       'FWHM: {0:0.2f}'.format(fwhm),\
       'S/N: {0:0.2f}'.format((maxx-fpar[5])/fpar[6])

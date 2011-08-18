@@ -61,6 +61,37 @@ def EcalEnergyAround(hits, ieta, iphi, radius = 2, calib = None):
                 energy += hitE
     return energy
 
+def isInstrumented(det, ieta, iphi, depth, isHPD=False):
+    if det.upper() == 'HB':
+        return isInstrumentedHB(ieta, iphi, depth, isHPD)
+    if det.upper() == 'HO':
+        return isInstrumentedHO(ieta,iphi)
+    return False
+
+def isInstrumentedHB(ieta, iphi, depth, isHPD):
+    if (iphi > 5) or (iphi < 2):
+        return False
+    if (iphi == 5) or (iphi == 2):
+        isHPD = True
+    if isHPD:
+        if (ieta > 0) and (ieta < 15) and (depth < 2):
+            return True
+        if (ieta > 14) and (ieta < 17) and (depth < 3):
+            return True
+    elif (ieta > 5) and (ieta < 10) and (depth < 5):
+        return True
+
+    return False
+
+def isInstrumentedHO(ieta, iphi):
+    if (ieta < 5) and (ieta > 0) and \
+       (iphi < 7) and (iphi > 2):
+        return True
+    elif (ieta < 11) and (ieta > 4) and \
+         (iphi < 5) and (ieta > 1):
+        return True
+    return False
+
 import cPickle as pickle
 
 def loadCalibration(fileName):

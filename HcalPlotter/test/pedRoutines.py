@@ -48,7 +48,7 @@ def findOnePe(hist, ws, name='x'):
     peMean = RooRealVar('peMean', 'mean_{pe}', 5., hist.GetBinLowEdge(1),
                         hist.GetBinLowEdge(hist.GetNbinsX()))
     peWidth = RooRealVar('peWidth', 'width_{pe}', pedWidth.getVal(), 0., 10.)
-    firstPe = RooGaussian('firstPe', 'firstPe', x, peMean, peWidth)
+    firstPe = RooGaussian('firstPe', 'firstPe', x, peMean, pedWidth)
 
     fped = RooRealVar('fped', 'f_{ped}', 0.8, 0., 1.)
 
@@ -113,6 +113,12 @@ def findOnePe(hist, ws, name='x'):
     ## return pedPlusOne
 
 if __name__ == '__main__':
+    import sys, os
+    sys.path.append(os.environ['HOME']+'/pyroot')
+    del sys
+    del os
+    import root_logon
+
     from ROOT import TFile, TTree, gDirectory, TMath
     from optparse import OptionParser
 
@@ -160,7 +166,7 @@ if __name__ == '__main__':
     ## pedhist.Draw()
     ## onePeF.Draw('same')
 
-    xf = x.frame(x.getMin(), x.getMax(), int(x.getMax()-x.getMin())/2)
+    xf = x.frame(x.getMin(), x.getMax(), int(x.getMax()-x.getMin()))
     ds.plotOn(xf)
     pedPlusOne.plotOn(xf, RooFit.Range('pedPlus_fit'))
     xf.Draw()
