@@ -30,7 +30,7 @@ import root_logon
 #import pyroot_fwlite.py
 
 from ROOT import TFile, TH1F, TCanvas, TLorentzVector, kRed, kBlue, TMath, \
-     TTree, gDirectory, gROOT, TMath
+     TTree, gDirectory, gROOT, TMath, RooWorkspace, RooRealVar
 ## from array import array
 
 from tbRoutines import *
@@ -46,8 +46,8 @@ outFile = TFile(opts.outputFile, 'recreate')
 
 dataTree = inFile.Get("plotanal/dataTree");
 
-HBDigis = 68
-HODigis = 33
+HBDigis = 72
+HODigis = 34
 
 dataTree.SetEstimate(dataTree.GetEntries())
 
@@ -92,11 +92,15 @@ minPed = int(minPed) - 1.5
 maxPed = int(maxPed) + 1.5
 
 minMip = int(minPed) - 0.5
+binWidth = 1.
 if opts.sipm:
-    maxMip = int(maxPed + pedRms*80) + 0.5
+    maxMip = int(maxPed + pedRms*200) + 0.5
+    binWidth = 10.
 else :
-    maxMip = int(maxPed + pedRms*30) + 0.5
-Nbins = int((maxMip - minMip)/2. + 0.5)
+    maxMip = int(maxPed + pedRms*20) + 0.5
+while int((maxMip-minMip)/binWidth)*binWidth < (maxMip-minMip):
+    maxMip += 1
+Nbins = int((maxMip - minMip)/binWidth + 0.5)
 
 
 print 'ped min: {0:0.2f} max: {1:0.2f}'.format(minPed,maxPed), \
@@ -111,6 +115,7 @@ dataTree.Draw('{0}>>sig_hist({1},{2:0.1f},{3:0.1f})'.format(HOTower,Nbins,
               sigCut, 'goff')
 ped_hist = gDirectory.Get('ped_hist')
 ped_hist.SetLineColor(myBlue)
+
 sig_hist = gDirectory.Get('sig_hist')
 
 gROOT.ProcessLine('.L langaus.C+')
@@ -147,5 +152,4 @@ sig_hist.Draw()
 fit.Draw('same')
 
 print 'for {0} MIP MPV: {1:0.2f}'.format(HOTower,maxx-fpar[5]),\
-      'FWHM: {0:0.2f}'.format(fwhm),\
       'S/N: {0:0.2f}'.format((maxx-fpar[5])/fpar[6])

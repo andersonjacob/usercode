@@ -12,6 +12,9 @@ parser.add_option('-n', action='store_true', dest='noStartup', default=False,
                   help='do not run statup scripts')
 parser.add_option('-c', '--calib', dest='initCalib', default='',
                   help='starting calibration')
+parser.add_option('-R', '--refine', dest='refine', action='store_true',
+                  default=False, help='refine by cutting off low tail and '+ \
+                  'lowering "significance" threshold')
 parser.add_option('-o', dest='outputFile', default='analysis.root',
                   help='output filename')
 parser.add_option('-d', '--depths', action='store_true', dest='depths',
@@ -28,20 +31,22 @@ import root_logon
 #import pyroot_fwlite.py
 
 from ROOT import TFile, TH1F, TCanvas, TLorentzVector, kRed, kBlue, TMath, \
-     TBrowser, TH2F, TTree, TH1
+     TBrowser, TH2F, TTree, TH1, gDirectory
 ## from array import array
 
 from tbRoutines import *
 from minRoutine import runMinimization
 import re
+from math import sqrt
 
 def passesCuts(event):
     #is beam
     if (event.triggerID != 4):
         return False
     # event is complete
-    if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
-           (event.NEBrecHits != 1700):
+    ## if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
+    ##        (event.NEBrecHits != 1700):
+    if (event.NHBdigis != 72) or (event.NHOdigis != 34):
         return False
     # is a pion
     if (event.VMBadc > 50):
@@ -62,7 +67,7 @@ calibData = {}
 calibDataHO = {}
 
 trivialConst = [1.0]*maxDim*maxDim*maxDepth
-trivialConst[0] = 1.18
+trivialConst[0] = 1.0
 if len(opts.initCalib) > 0:
     trivialConst = loadCalibration(opts.initCalib)
 
@@ -77,22 +82,38 @@ beamE = opts.beamE
 TH1.SetDefaultBufferSize(10000)
 prelim = TH1F('prelimE', 'prelim energy', 100, 0., -1.)
 passed = 0
+radius = 1
 
 resolution = beamE*sqrt(1/beamE + 0.01)
+
+ieta = opts.eta
+iphi = opts.phi
+ecalXtalieta = ieta*5-2
+ecalXtaliphi = ebMaxPhi - (iphi*5-2)
+
+(ie,ip,xie,xip) = findBeamCaloCoords(dataTree)
+
+print 'assumed resolution: {0:0.2f}'.format(resolution)
+
+if (ieta == 0):
+    ieta = ie
+    ecalXtalieta = xie
+    print 'hb ieta:',ieta,'eb ieta:',ecalXtalieta
+
+if (iphi == 0):
+    iphi = ip
+    ecalXtaliphi = xip
+    print 'hb iphi:',iphi,'eb iphi:',ecalXtaliphi
+
 
 for event in dataTree:
     EvtN += 1
     ## if EvtN > 100:
     ##     break
-    ieta = eta2ieta(event.HBTableEta)
-    iphi = phi2iphi(event.HBTablePhi)
-    if (opts.eta > 0):
-        ieta = opts.eta
-    if (opts.phi > 0):
-        iphi = opts.phi
+    if (ieta==0) or (iphi==0):
+        ieta = eta2ieta(event.HBTableEta)
+        iphi = phi2iphi(event.HBTablePhi)
 
-    ecalXtalieta = ieta*5-2
-    ecalXtaliphi = ebMaxPhi - (iphi*5-2)
 
     if EvtN%500 == 1:
         print 'record:',EvtN,
@@ -110,19 +131,22 @@ for event in dataTree:
     EB81 = EcalEnergyAround(event.EBE, ecalXtalieta, ecalXtaliphi, radius=4)\
            *trivialConst[0]
 
-    if (HB9+EB81) < beamE * (1-2.*resolution):
+    if opts.refine and ((HB9+EB81) < beamE - 2.*resolution):
         # print 'HB9:',HB9
         continue
 
     prelim.Fill(HB9+EB81)
 
     passed += 1
-    if not ('EB81' in calibData.keys()):
-        calibData['EB81'] = []
-    calibData['EB81'].append(EB81)
+    if (event.NEBrecHits > 1):
+        if not ('EB81' in calibData.keys()):
+            calibData['EB81'] = []
+        calibData['EB81'].append(EB81)
 
-    for e in range(ieta-1, ieta+2):
-        for p in range(iphi-1, iphi+2):
+    for e in range(ieta-radius, ieta+radius+1):
+        for p in range(iphi-radius, iphi+radius+1):
+    ## for e in range(6, 10):
+    ##     for p in range(2, 6):
             for d in range(1, HBdepths):
                 tmpIndex = HcalIndex(e,p,d)
                 if not isInstrumented('HB', e, p, d, isHPD=(not opts.depths)):
@@ -142,8 +166,8 @@ for event in dataTree:
             ## calibDataHO[Ename].append(event.HOE[tmpIndex]*\
             ##                         trivialConstHO[tmpIndex])
 
-print 'events passed:', passed,\
-      'events kept:', len(calibData[calibData.keys()[0]])
+## print 'events passed:', passed,\
+##       'events kept:', len(calibData[calibData.keys()[0]])
 
 prelim.BufferEmpty()
 #prelim.Draw()
@@ -182,6 +206,8 @@ for par in range(1, minner.GetNumberTotalParameters()):
         print 'initial value: {0:0.3f}'.format(trivialConst[calIndex]),
         if (parSignif > 0.5):
             calibConst[calIndex] = parVal
+        elif opts.refine and (parSignif > 0.25):
+            calibConst[calIndex] = parVal
         print 'new value: {0:0.3f} "significance": {1:0.4f}'.format(parVal, parSignif)
 
 BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., -1.0)
@@ -193,15 +219,9 @@ for event in dataTree:
     EvtN += 1
     ## if EvtN > 1:
     ##     break
-    ieta = eta2ieta(event.HBTableEta)
-    iphi = phi2iphi(event.HBTablePhi)
-    if (opts.eta > 0):
-        ieta = opts.eta
-    if (opts.phi > 0):
-        iphi = opts.phi
-
-    ecalXtalieta = ieta*5-2
-    ecalXtaliphi = ebMaxPhi - (iphi*5-2)
+    if (ieta == 0) or (iphi==0):
+        ieta = eta2ieta(event.HBTableEta)
+        iphi = phi2iphi(event.HBTablePhi)
 
     if EvtN%500 == 1:
         print 'record:',EvtN,
@@ -217,9 +237,9 @@ for event in dataTree:
 
     for d in range(1, HBdepths):
         sumAfter += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
-                                     calib=calibConst)
+                                     radius=radius, calib=calibConst)
         sumBefore += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
-                                      calib=trivialConst)
+                                      radius=radius, calib=trivialConst)
     
     BarrelBefore.Fill(sumBefore)
     BarrelAfter.Fill(sumAfter)

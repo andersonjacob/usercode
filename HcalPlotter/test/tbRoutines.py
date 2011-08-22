@@ -92,6 +92,42 @@ def isInstrumentedHO(ieta, iphi):
         return True
     return False
 
+def correctSaturation(pe, NP, xtalk=0.):
+    from math import log
+    if (pe >= NP):
+        return 12.*NP
+    if (pe < NP*0.05):
+        return pe
+    val = log(1.0 - float(pe)/NP)
+    val *= -NP
+    if (xtalk > 0) and (xtalk < 1.):
+        val *= (1-xtalk)
+    return val
+
+def findBeamCenter(profile):
+    return profile.GetBinCenter(profile.GetMaximumBin())
+
+def findBeamCaloCoords(data):
+    from ROOT import gDirectory
+    data.Draw('maxEtaHB>>maxEtaHB(16,0.5,16.5)', 'triggerID==4', 'goff')
+    temph = gDirectory.Get('maxEtaHB')
+    ieta = findBeamCenter(temph)
+
+    data.Draw('maxEtaEB>>maxEtaEB(50,0.5,50.5)', 'triggerID==4', 'goff')
+    temph = gDirectory.Get('maxEtaEB')
+    xtalieta = findBeamCenter(temph)
+
+    data.Draw('maxPhiHB>>maxPhiHB(10,0.5,10.5)', 'triggerID==4', 'goff')
+    temph = gDirectory.Get('maxPhiHB')
+    iphi = findBeamCenter(temph)
+
+    data.Draw('maxPhiEB>>maxPhiEB(21,0.5,21.5)', 'triggerID==4', 'goff')
+    temph = gDirectory.Get('maxPhiEB')
+    xtaliphi = findBeamCenter(temph)
+
+    return (int(ieta), int(iphi), int(xtalieta), int(xtaliphi))
+
+
 import cPickle as pickle
 
 def loadCalibration(fileName):

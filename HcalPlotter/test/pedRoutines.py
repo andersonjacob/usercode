@@ -1,9 +1,9 @@
 from ROOT import RooDataSet, RooRealVar, RooGaussian, RooArgSet, RooFit,\
      gPad, RooAddPdf, RooWorkspace
 
-def fillDataSet(data, x, N):
+def fillDataSet(data, x, N, dsName = 'ds'):
     cols = RooArgSet(x)
-    ds = RooDataSet('ds', 'ds', cols)
+    ds = RooDataSet(dsName, dsName, cols)
     #ds.Print()
     print 'length data:', N
     for datum in range(0,N):
