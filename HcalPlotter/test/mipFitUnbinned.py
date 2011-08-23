@@ -83,20 +83,28 @@ outFile = TFile(opts.outputFile, 'recreate')
 
 dataTree = inFile.Get("plotanal/dataTree");
 
-HBDigis = 72
-HODigis = 34
+HBDigis = 68
+HODigis = 33
 
 dataTree.SetEstimate(dataTree.GetEntries())
 
-for event in dataTree:
-    break
+ieta = opts.eta
+iphi = opts.phi
+ecalXtalieta = ieta*5-2
+ecalXtaliphi = ebMaxPhi - (iphi*5-2)
 
-ieta = eta2ieta(event.HBTableEta)
-if (opts.eta > 0):
-    ieta = opts.eta
-iphi = phi2iphi(event.HBTablePhi)
-if (opts.phi > 0):
-    iphi = opts.phi
+(ie,ip,xie,xip) = findBeamCaloCoords(dataTree)
+
+if (ieta == 0):
+    ieta = ie
+    ecalXtalieta = xie
+    print 'hb ieta:',ieta,'eb ieta:',ecalXtalieta
+
+if (iphi == 0):
+    iphi = ip
+    ecalXtaliphi = xip
+    print 'hb iphi:',iphi,'eb iphi:',ecalXtaliphi
+
 
 qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
 #qualCut = '(NHOdigis=={0})&&(VMBadc>50.)&&(VMFadc>100.)&&(VMFadc<1500)&&(S3adc>0.)'.format(HODigis)
@@ -108,9 +116,9 @@ HOTower = 'HOE[{0}][{1}]'.format(ieta,iphi)
 if opts.hb:
     HOTower = 'HBE[{0}][{1}][{2}]'.format(ieta,iphi,opts.depth)
 
-print '{0}'.format(HOTower),\
-      '(eta,phi): ({0:0.2f},{1:0.2f})'.format(event.HBTableEta,
-                                              event.HBTablePhi)
+## print '{0}'.format(HOTower),\
+##       '(eta,phi): ({0:0.2f},{1:0.2f})'.format(event.HBTableEta,
+##                                               event.HBTablePhi)
 
 dataTree.Draw('{0}'.format(HOTower), pedCut, 'goff')
 
@@ -131,8 +139,8 @@ maxPed = int(maxPed) + 1.5
 minMip = int(minPed) - 0.5
 binWidth = 1.
 if opts.sipm:
-    maxMip = int(maxPed + pedRms*200) + 0.5
-    binWidth = 10.
+    maxMip = int(maxPed + pedRms*100) + 0.5
+    binWidth = 5.
 else :
     maxMip = int(maxPed + pedRms*20) + 0.5
 while int((maxMip-minMip)/binWidth)*binWidth < (maxMip-minMip):
@@ -221,6 +229,14 @@ if (sig_hist.GetEntries > 0):
 
     lxgplus.fitTo(sigDS, RooFit.Minos(False))
     lxgplus.plotOn(xf)
+    if (fped.getVal() > 0.1):
+        lxgplus.plotOn(xf, RooFit.LineColor(kRed+2),
+                       RooFit.LineStyle(kDashed),
+                       RooFit.Components('ped'))
+        lxgplus.plotOn(xf, RooFit.LineColor(myBlue),
+                       RooFit.LineStyle(kDashed),
+                       RooFit.Components('lxg'))
+        
     #lxgplus.paramOn(xf)
     
     c2 = TCanvas('c2', 'signal')
