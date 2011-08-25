@@ -7,8 +7,9 @@ def fillDataSet(data, x, N, dsName = 'ds'):
     #ds.Print()
     print 'length data:', N
     for datum in range(0,N):
-        x.setVal(data[datum])
-        ds.add(cols)
+        if (data[datum] < x.getMax()) and (data[datum] > x.getMin()):
+            x.setVal(data[datum])
+            ds.add(cols)
     ds.Print()
     return ds
 
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     inFile = TFile(args[0])
     dataTree = inFile.Get("plotanal/dataTree")
 
-    pedCut = '(triggerID==1)&&(NHOdigis==34)'
+    pedCut = '(triggerID==1)&&(NHOdigis==33)'
     HOTower = 'HOE[{0}][{1}]'.format(opts.eta, opts.phi)
     dataTree.Draw(HOTower, pedCut, 'goff')
 

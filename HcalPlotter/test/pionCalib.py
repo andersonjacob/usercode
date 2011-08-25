@@ -44,9 +44,9 @@ def passesCuts(event):
     if (event.triggerID != 4):
         return False
     # event is complete
-    ## if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
-    ##        (event.NEBrecHits != 1700):
-    if (event.NHBdigis != 72) or (event.NHOdigis != 34):
+    if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
+           (event.NEBrecHits != 1700):
+    ## if (event.NHBdigis != 72) or (event.NHOdigis != 34):
         return False
     # is a pion
     if (event.VMBadc > 50):

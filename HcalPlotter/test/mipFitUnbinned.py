@@ -32,42 +32,32 @@ import root_logon
 from ROOT import TFile, TH1F, TCanvas, kRed, kBlue, TMath, \
      TTree, gDirectory, gROOT, RooWorkspace, RooRealVar, RooLandau, \
      RooFit, RooFFTConvPdf, RooAddPdf, RooConstVar, RooGaussian, kDashed, \
-     RooArgSet, RooAbsReal
+     RooArgSet, RooAbsReal, RooArgList, RooDataHist, RooHistPdf
 ## from array import array
 
 from tbRoutines import *
-from pedRoutines import fillDataSet, fitPed
+from pedRoutines import fillDataSet, fitPed, findOnePe
 import re
 
 
-def findMax(func, x, mpv, width):
-    p = mpv - 0.1*width
-    precision = abs(0.000001*mpv)
-    step = 0.05*width
-    lold = -9999.
-    l = -9999.
-    maxCalls = 10000
-    i = 0
+def findMax(func, x):
 
-    norm = RooArgSet(x)
+    norm = RooArgList(x)
+    pdfF1 = func.asTF(norm)
 
-    while (abs(step) > precision) and (i < maxCalls):
-        i += 1
-        lold = l
+    maxx1 = pdfF1.GetMaximumX()
 
-        x.setVal(p + step)
-        l = func.getVal(norm)
-        if (l < lold):
-            step = -step/10
-        p += step
+    print 'maxx: {0:0.4f}'.format(maxx1)
+                
+    return maxx1
 
-    if (i < maxCalls):
-        maxx =  x.getVal()
-    else:
-        return -1
-
-    return maxx
-        
+def makeHistPdf(hist, ws, x):
+    theVars = RooArgList(x)
+    v = RooArgSet(x)
+    dataHist = RooDataHist(hist.GetName()+'_dh', 'dataHist', theVars, hist)
+    hpdf = RooHistPdf(hist.GetName()+'_pdf', 'hist pdf', v, dataHist)
+    getattr(ws, 'import')(hpdf)
+    return hpdf
 
 ## gROOT.ProcessLine('.L langaus.C+')
 ## from ROOT import langaupro, Double, Long, langaupedfit, preFitHisto
@@ -106,8 +96,8 @@ if (iphi == 0):
     print 'hb iphi:',iphi,'eb iphi:',ecalXtaliphi
 
 
-qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
-#qualCut = '(NHOdigis=={0})&&(VMBadc>50.)&&(VMFadc>100.)&&(VMFadc<1500)&&(S3adc>0.)'.format(HODigis)
+#qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
+qualCut = '(NHOdigis=={0})&&(VMBadc>50.)&&(VMFadc>100.)&&(VMFadc<1500)&&(S3adc>0.)'.format(HODigis)
 #qualCut = '(NHOdigis=={0})'.format(HODigis)
 pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
 sigCut = '(triggerID==4)&&{0}'.format(qualCut)
@@ -139,8 +129,8 @@ maxPed = int(maxPed) + 1.5
 minMip = int(minPed) - 0.5
 binWidth = 1.
 if opts.sipm:
-    maxMip = int(maxPed + pedRms*100) + 0.5
-    binWidth = 5.
+    maxMip = int(maxPed + pedRms*80) + 0.5
+    binWidth = 10.
 else :
     maxMip = int(maxPed + pedRms*20) + 0.5
 while int((maxMip-minMip)/binWidth)*binWidth < (maxMip-minMip):
@@ -167,20 +157,34 @@ if havePeds:
     pedDS = fillDataSet(dataTree.GetV1(), x, dataTree.GetSelectedRows())
     getattr(ws, 'import')(pedDS)
 
-    fitPed(ped_hist, ws, x.GetName())
+    if opts.sipm:
+        findOnePe(ped_hist, ws, x.GetName())
+        ws.var('fped').setConstant(True)
+        ws.var('peMean').setConstant(True)
+    else:
+        fitPed(ped_hist, ws, x.GetName())
     ws.var('pedMean').setConstant(True)
     ws.var('pedWidth').setConstant(True)
 
     pedDS.plotOn(xfped)
-    ws.pdf('ped').plotOn(xfped)
+    if opts.sipm:
+        ws.pdf('pedPlusOne').plotOn(xfped)
+    else:
+        ws.pdf('ped').plotOn(xfped)
 
     c1 = TCanvas('c1', 'pedestal')
     xfped.Draw()
+
+    makeHistPdf(ped_hist, ws, x)
+    ws.Print()
+
+    savePedWidth = ws.var('pedWidth').getVal()
 
 dataTree.Draw('{0}>>sig_hist({1},{2:0.1f},{3:0.1f})'.format(HOTower,Nbins,
                                                             minMip,maxMip),
               sigCut, 'goff')
 sig_hist = gDirectory.Get('sig_hist')
+x.setRange(minMip, maxMip)
 
 if (sig_hist.GetEntries > 0):
     ## fpar = array('d', [0.]*7)
@@ -200,7 +204,7 @@ if (sig_hist.GetEntries > 0):
                         'sigDS')
     mpv = RooRealVar('mpv', 'mpv',
                      sig_hist.GetBinCenter(sig_hist.GetMaximumBin()),
-                     ## fpar[1],
+                     #40.,
                      x.getMin(), x.getMax(), 'fC')
     width = RooRealVar('width', 'width', sig_hist.GetRMS()/5., #fpar[0],
                        0., 50., 'fC')
@@ -216,12 +220,16 @@ if (sig_hist.GetEntries > 0):
     xf = x.frame(RooFit.Bins(Nbins))
     sigDS.plotOn(xf)
 
-    fped = RooRealVar('fped', 'f_{ped}', 0., 0., 1.)
-    lxgplus = RooAddPdf('lxgplus', 'lxgplus', ws.pdf('ped'), lxg, fped)
+    fmip = RooRealVar('fmip', 'f_{mip}', 0.9, 0., 1.)
+    if opts.sipm:
+        lxgplus = RooAddPdf('lxgplus', 'lxgplus', lxg,
+                            ws.pdf('pedPlusOne'), fmip)
+    else:
+        lxgplus = RooAddPdf('lxgplus', 'lxgplus', lxg, ws.pdf('ped'), fmip)
     if havePeds:
         ws.pdf('ped').plotOn(xf, RooFit.LineColor(kRed),
                              RooFit.LineStyle(kDashed),
-                             RooFit.Normalization(ped_hist.GetEntries(),
+                             RooFit.Normalization(sig_hist.GetEntries()/3,
                                                   RooAbsReal.Raw))
     else:
         fped.setVal(0.)
@@ -229,10 +237,10 @@ if (sig_hist.GetEntries > 0):
 
     lxgplus.fitTo(sigDS, RooFit.Minos(False))
     lxgplus.plotOn(xf)
-    if (fped.getVal() > 0.1):
+    if (fmip.getVal() < 0.9):
         lxgplus.plotOn(xf, RooFit.LineColor(kRed+2),
                        RooFit.LineStyle(kDashed),
-                       RooFit.Components('ped'))
+                       RooFit.Components('ped*'))
         lxgplus.plotOn(xf, RooFit.LineColor(myBlue),
                        RooFit.LineStyle(kDashed),
                        RooFit.Components('lxg'))
@@ -252,7 +260,7 @@ if (sig_hist.GetEntries > 0):
     ## maxx = Double(0.)
     ## fwhm = Double(0.)
 
-    maxx = findMax(lxg, x, mpv.getVal(), width.getVal())
+    maxx = findMax(lxg, x) #, mpv.getVal(), width.getVal())
 
     if havePeds:
         maxx -= ws.var('pedMean').getVal()
@@ -260,8 +268,13 @@ if (sig_hist.GetEntries > 0):
     ## langaupro(fpar,maxx, fwhm)
 
     print 'for {0} MIP MPV: {1:0.2f}'.format(HOTower,maxx), \
-          'S/N: {0:0.2f}'.format(maxx/ws.var('pedWidth').getVal())
+          'S/N: {0:0.2f}'.format(maxx/savePedWidth),
           #'FWHM: {0:0.2f}'.format(fwhm),\
+    if opts.sipm and havePeds:
+        print ' fC/pe: {0:0.3f}'.format(ws.var('peMean').getVal() - \
+                                        ws.var('pedMean').getVal())
+    else:
+        print
 
 
 

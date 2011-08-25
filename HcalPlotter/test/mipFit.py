@@ -47,7 +47,7 @@ outFile = TFile(opts.outputFile, 'recreate')
 dataTree = inFile.Get("plotanal/dataTree");
 
 HBDigis = 72
-HODigis = 34
+HODigis = 33
 
 dataTree.SetEstimate(dataTree.GetEntries())
 
@@ -94,8 +94,8 @@ maxPed = int(maxPed) + 1.5
 minMip = int(minPed) - 0.5
 binWidth = 1.
 if opts.sipm:
-    maxMip = int(maxPed + pedRms*200) + 0.5
-    binWidth = 10.
+    maxMip = int(maxPed + pedRms*80) + 0.5
+    binWidth = 5.
 else :
     maxMip = int(maxPed + pedRms*20) + 0.5
 while int((maxMip-minMip)/binWidth)*binWidth < (maxMip-minMip):
@@ -135,10 +135,12 @@ if havePeds:
 else:
     fit = preFitHisto(sig_hist, fpar, fparerr, chisqr, ndf)
 
-maxx = Double(0.)
-fwhm = Double(0.)
+#maxx = Double(0.)
+#fwhm = Double(0.)
 
-langaupro(fpar,maxx, fwhm)
+#langaupro(fpar,maxx, fwhm)
+
+maxx = fit.GetMaximumX(fpar[1]-2.*fpar[0], fpar[1]+2.*fpar[0])
 
 c1 = TCanvas('c1', 'pedestal')
 ped_hist.Draw()
