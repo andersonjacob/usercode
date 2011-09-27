@@ -68,7 +68,8 @@ hcales_hardcode = cms.ESSource(
         'GainWidths', 'LUTCorrs', 
         'PFCorrs', 'QIEData',
         'L1TriggerObjects','ZSThresholds','DcsValues',
-        'ChannelQuality','RespCorrs','TimeCorrs')
+        'ChannelQuality','RespCorrs','TimeCorrs',
+        'RecoParams')
     )
 
 hcalasciiprefer = cms.ESPrefer("HcalTextCalibrations", "hcales_ascii")
