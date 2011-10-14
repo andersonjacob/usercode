@@ -81,14 +81,18 @@ process.ecalDataSequence = cms.Sequence(process.ecalEBunpacker*process.ecalUncal
 process.load("EventFilter.HcalRawToDigi.HcalRawToDigi_cfi")
 process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hbhe_cfi")
 process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_ho_cfi")
-process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hf_cfi")
+#process.load("RecoLocalCalo.HcalRecProducers.HcalSimpleReconstructor_hf_cfi")
 process.load("andersj.HcalPlotter.HcalTBObjectUnpacker_Normal_cfi")
 
-process.horeco.firstSample=2
-process.horeco.samplesToAdd=6
+## process.horeco.firstSample=2
+## process.horeco.samplesToAdd=6
+process.horeco.firstSample=3
+process.horeco.samplesToAdd=4
+process.horeco.correctForPhaseContainment = False
+process.horeco.correctForTimeslew = False
 
-process.hfreco.firstSample=2
-process.hfreco.samplesToAdd=9
+#process.hfreco.firstSample=2
+#process.hfreco.samplesToAdd=9
 
 process.plotanal=cms.EDAnalyzer(
     "HcalHOTBPlotAnal",
@@ -121,4 +125,5 @@ process.plotanal=cms.EDAnalyzer(
 
 ##process.dump = cms.EDAnalyzer("EventContentAnalyzer")
 
-process.p=cms.Path(process.ecalDataSequence+process.hcalDigis+process.hbheprereco+process.horeco+process.hfreco+process.tbunpack+process.plotanal)
+#process.p=cms.Path(process.ecalDataSequence+process.hcalDigis+process.hbheprereco+process.horeco+process.hfreco+process.tbunpack+process.plotanal)
+process.p=cms.Path(process.ecalDataSequence+process.hcalDigis+process.hbheprereco+process.horeco+process.tbunpack+process.plotanal)

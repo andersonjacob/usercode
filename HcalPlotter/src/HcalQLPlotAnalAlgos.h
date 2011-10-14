@@ -86,8 +86,11 @@ private:
   double HOE[maxDim][maxDim];
   double HBE[maxDim][maxDim][maxDepth];
   double EBE[ebMaxEta][ebMaxPhi];
+  double HODigi[10];
+  double HBDigi[10][maxDepth];
+  int HBadc[10][maxDepth];
   double HBE9, HOE9, EBE25, EBE81, EBE225;
-  std::map< HcalDetId, std::vector< int > > pedMap_;
+  // std::map< HcalDetId, std::vector< int > > pedMap_;
 };
 
 #endif // HcalQLPlotAnalAlgos_included

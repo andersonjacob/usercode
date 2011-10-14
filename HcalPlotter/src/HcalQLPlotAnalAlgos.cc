@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.6 2011/08/09 16:17:30 andersj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.7 2011/08/09 21:56:43 andersj Exp $
 //
 //
 
@@ -100,6 +100,11 @@ HcalQLPlotAnalAlgos::HcalQLPlotAnalAlgos(const edm::ParameterSet& histoParams) :
   dataTree->Branch("HOE", HOE, name);
   sprintf(name, "EBE[%d][%d]/D", ebMaxEta, ebMaxPhi);
   dataTree->Branch("EBE", EBE, name);
+  dataTree->Branch("HODigi", HODigi, "HODigi[10]/D");
+  sprintf(name, "HBDigi[10][%d]/D", maxDepth);
+  dataTree->Branch("HBDigi", HBDigi, name);
+  sprintf(name, "HBadc[10][%d]/I", maxDepth);
+  dataTree->Branch("HBadc", HBadc, name);
   dataTree->Branch("EBE25", &EBE25, "EBE25/D");
   dataTree->Branch("EBE81", &EBE81, "EBE81/D");
   dataTree->Branch("EBE225", &EBE225, "EBE225/D");
@@ -125,84 +130,84 @@ HcalQLPlotAnalAlgos::HcalQLPlotAnalAlgos(const edm::ParameterSet& histoParams) :
 
 void HcalQLPlotAnalAlgos::end(void)
 {
-  std::ofstream pedFile("new_pedestals.txt", std::ios::out | std::ios::trunc);
-  std::ofstream gainFile("new_gains.txt", std::ios::out | std::ios::trunc);
+  // std::ofstream pedFile("new_pedestals.txt", std::ios::out | std::ios::trunc);
+  // std::ofstream gainFile("new_gains.txt", std::ios::out | std::ios::trunc);
 
-  pedFile << "#U ADC\n"
-	  << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
-  gainFile << "#U ADC\n"
-	   << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
+  // pedFile << "#U ADC\n"
+  // 	  << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
+  // gainFile << "#U ADC\n"
+  // 	   << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
 
-  std::map< HcalDetId, std::vector<int> >::iterator ped;
-  TString idStr = "  ";
-  TH1 * phist = 0;
-  char hname[100];
-  double avgPed = 0.;
+  // std::map< HcalDetId, std::vector<int> >::iterator ped;
+  // TString idStr = "  ";
+  // TH1 * phist = 0;
+  // char hname[100];
+  // double avgPed = 0.;
 
-  for (ped = pedMap_.begin(); ped != pedMap_.end(); ++ped) {
+  // for (ped = pedMap_.begin(); ped != pedMap_.end(); ++ped) {
     
-    pedFile << ped->first.ieta() << "   "
-	    << ped->first.iphi() << "   "
-	    << ped->first.depth() << "   ";
-    gainFile << ped->first.ieta() << "   "
-	     << ped->first.iphi() << "   "
-	     << ped->first.depth() << "   ";
-    switch (ped->first.subdet()) {
-    case HcalBarrel: 
-      pedFile << "HB   "; 
-      gainFile << "HB   "; 
-      idStr = "HB";
-      break;
-    case HcalEndcap: 
-      pedFile << "HE   ";
-      gainFile << "HE   ";
-      idStr = "HE";
-      break;
-    case HcalForward: 
-      pedFile << "HF   "; 
-      gainFile << "HF   "; 
-      idStr = "HF";
-      break;
-    case HcalOuter: 
-      pedFile << "HO   "; 
-      gainFile << "HO   "; 
-      idStr = "HO";
-      break;
-    default: 
-      pedFile << "   ";
-      gainFile << "   ";
-      idStr = "";
-    }
-    pedFile << std::setprecision(4);
-    gainFile << std::setprecision(4);
-    for (int cap = 0; cap < 4; ++cap) {
-      sprintf(hname, "ADC_%s_%d_%d_%d_cap_%d", idStr.Data(), ped->first.ieta(), 
-	      ped->first.iphi(), ped->first.depth(), cap);
-      phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
-					 HcalQLPlotHistoMgr::PEDESTAL, true);
+  //   pedFile << ped->first.ieta() << "   "
+  // 	    << ped->first.iphi() << "   "
+  // 	    << ped->first.depth() << "   ";
+  //   gainFile << ped->first.ieta() << "   "
+  // 	     << ped->first.iphi() << "   "
+  // 	     << ped->first.depth() << "   ";
+  //   switch (ped->first.subdet()) {
+  //   case HcalBarrel: 
+  //     pedFile << "HB   "; 
+  //     gainFile << "HB   "; 
+  //     idStr = "HB";
+  //     break;
+  //   case HcalEndcap: 
+  //     pedFile << "HE   ";
+  //     gainFile << "HE   ";
+  //     idStr = "HE";
+  //     break;
+  //   case HcalForward: 
+  //     pedFile << "HF   "; 
+  //     gainFile << "HF   "; 
+  //     idStr = "HF";
+  //     break;
+  //   case HcalOuter: 
+  //     pedFile << "HO   "; 
+  //     gainFile << "HO   "; 
+  //     idStr = "HO";
+  //     break;
+  //   default: 
+  //     pedFile << "   ";
+  //     gainFile << "   ";
+  //     idStr = "";
+  //   }
+  //   pedFile << std::setprecision(4);
+  //   gainFile << std::setprecision(4);
+  //   for (int cap = 0; cap < 4; ++cap) {
+  //     sprintf(hname, "ADC_%s_%d_%d_%d_cap_%d", idStr.Data(), ped->first.ieta(), 
+  // 	      ped->first.iphi(), ped->first.depth(), cap);
+  //     phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
+  // 					 HcalQLPlotHistoMgr::PEDESTAL, true);
 
-      avgPed = ped->second[cap]/double(ped->second[cap+4]);
-      if (phist) {
-	int minBin = (phist->GetMaximumBin()-2 > 0) 
-	  ? phist->GetMaximumBin()-2 : 1;
-	double sum = 0.;
-	double sumw = 0.;
-	for (int bin = minBin; bin < minBin+5; ++bin) {
-	  sum += phist->GetBinCenter(bin)*phist->GetBinContent(bin);
-	  sumw += phist->GetBinContent(bin);
-	}
-	if (sumw > 0.)
-	  avgPed = sum/sumw;
-      }
-      pedFile << avgPed << "   ";
-      gainFile << 1.0 << "   ";
-    }
-    pedFile << std::hex << ped->first.rawId() << std::dec << '\n';
-    gainFile << std::hex << ped->first.rawId() << std::dec << '\n';
-  }
+  //     avgPed = ped->second[cap]/double(ped->second[cap+4]);
+  //     if (phist) {
+  // 	int minBin = (phist->GetMaximumBin()-2 > 0) 
+  // 	  ? phist->GetMaximumBin()-2 : 1;
+  // 	double sum = 0.;
+  // 	double sumw = 0.;
+  // 	for (int bin = minBin; bin < minBin+5; ++bin) {
+  // 	  sum += phist->GetBinCenter(bin)*phist->GetBinContent(bin);
+  // 	  sumw += phist->GetBinContent(bin);
+  // 	}
+  // 	if (sumw > 0.)
+  // 	  avgPed = sum/sumw;
+  //     }
+  //     pedFile << avgPed << "   ";
+  //     gainFile << 1.0 << "   ";
+  //   }
+  //   pedFile << std::hex << ped->first.rawId() << std::dec << '\n';
+  //   gainFile << std::hex << ped->first.rawId() << std::dec << '\n';
+  // }
 
-  pedFile.close();
-  gainFile.close();
+  // pedFile.close();
+  // gainFile.close();
 }
 
 void HcalQLPlotAnalAlgos::SetEventType(const HcalTBTriggerData& trigd)
@@ -471,6 +476,11 @@ void HcalQLPlotAnalAlgos::processDigi(const HBHEDigiCollection& hbhedigic)
 {
   HBHEDigiCollection::const_iterator it;
 
+  for (int d = 0; d<maxDepth; ++d)
+    for (int i = 0; i<10; ++i) {
+      HBDigi[i][d] = 0.;
+      HBadc[i][d] = 0;
+    }
   NHBdigis = hbhedigic.size();
   for (it  = hbhedigic.begin(); 
        it != hbhedigic.end();
@@ -480,11 +490,20 @@ void HcalQLPlotAnalAlgos::processDigi(const HBHEDigiCollection& hbhedigic)
 
     TH1* phist=histos_->GetAHistogram(id,eid,HcalQLPlotHistoMgr::PULSE,triggerID_);
 
-    char hname[100];
+    // char hname[100];
 
     if (phist){
       for (int bin=0; bin<it->size(); bin++)
 	phist->Fill(bin*1.0,(*it)[bin].nominal_fC());
+    }
+
+    int tmpPhi = id.iphi()%10;
+    int tmpDepth = id.iphi()/10;
+    if ((id.ieta() == ietaTable) && (tmpPhi == iphiTable)) {
+      for (int ts = 0; ts < it->size(); ++ts) {
+	HBDigi[ts][tmpDepth] = (*it)[ts].nominal_fC();
+	HBadc[ts][tmpDepth] = (*it)[ts].adc();
+      }
     }
 
     if (triggerID_ == HcalQLPlotHistoMgr::PEDESTAL) {
@@ -493,22 +512,22 @@ void HcalQLPlotAnalAlgos::processDigi(const HBHEDigiCollection& hbhedigic)
 	for (int bin=0; bin<it->size(); bin++)
 	  phist->Fill((*it)[bin].adc());
       }
-      std::map< HcalDetId, std::vector<int> >::iterator peds = pedMap_.find(id);
-      if (peds == pedMap_.end()) {
-	std::vector<int> holder;
-	for (int i=0; i<8; ++i) holder.push_back(0);
-	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
-      }
-      for (int ts = 0; ts < it->size(); ++ts) {
-	sprintf(hname, "ADC_HB_%d_%d_%d_cap_%d", id.ieta(), id.iphi(), 
-		id.depth(), (*it)[ts].capid());
-	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
-					   triggerID_);
-	if (phist)
-	  phist->Fill((*it)[ts].adc());
-	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
-	peds->second[(*it)[ts].capid()+4] += 1;
-      }
+      // std::map< HcalDetId, std::vector<int> >::iterator peds = pedMap_.find(id);
+      // if (peds == pedMap_.end()) {
+      // 	std::vector<int> holder;
+      // 	for (int i=0; i<8; ++i) holder.push_back(0);
+      // 	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
+      // }
+      // for (int ts = 0; ts < it->size(); ++ts) {
+      // 	sprintf(hname, "ADC_HB_%d_%d_%d_cap_%d", id.ieta(), id.iphi(), 
+      // 		id.depth(), (*it)[ts].capid());
+      // 	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
+      // 					   triggerID_);
+      // 	if (phist)
+      // 	  phist->Fill((*it)[ts].adc());
+      // 	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
+      // 	peds->second[(*it)[ts].capid()+4] += 1;
+      // }
     }
   }
 }
@@ -517,8 +536,8 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
 {
   HODigiCollection::const_iterator it;
 
-//   for (int i = 0; i<10; ++i) 
-//     HO_3_3_digi[i] = 0.;
+  for (int i = 0; i<10; ++i) 
+    HODigi[i] = 0.;
   NHOdigis = hodigic.size();
   for (it  = hodigic.begin(); 
        it != hodigic.end();
@@ -535,7 +554,12 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
       }
     }
 
-    char hname[100];
+    if ((id.ieta() == ietaTable) && (id.iphi() == iphiTable)) {
+      for (int ts = 0; ts < it->size(); ++ts)
+	HODigi[ts] = (*it)[ts].nominal_fC();
+    }
+
+    // char hname[100];
 
     if (triggerID_ == HcalQLPlotHistoMgr::PEDESTAL) {
       phist=histos_->GetAHistogram(id,eid,HcalQLPlotHistoMgr::ADC,triggerID_);
@@ -543,23 +567,23 @@ void HcalQLPlotAnalAlgos::processDigi(const HODigiCollection& hodigic)
 	for (int bin=0; bin<it->size(); bin++)
 	  phist->Fill((*it)[bin].adc());
       }
-      std::map< HcalDetId, std::vector<int> >::iterator peds = pedMap_.find(id);
-      if (peds == pedMap_.end()) {
-	std::vector<int> holder;
-	for (int i=0; i<8; ++i) holder.push_back(0);
-	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
-      }
-      for (int ts = 0; ts < it->size(); ++ts) {
-	sprintf(hname, "ADC_HO_%d_%d_%d_cap_%d", id.ieta(), id.iphi(), 
-		id.depth(), (*it)[ts].capid());
-	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
-					   triggerID_);
-	if (phist)
-	  phist->Fill((*it)[ts].nominal_fC());
+      // std::map< HcalDetId, std::vector<int> >::iterator peds = pedMap_.find(id);
+      // if (peds == pedMap_.end()) {
+      // 	std::vector<int> holder;
+      // 	for (int i=0; i<8; ++i) holder.push_back(0);
+      // 	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
+      // }
+      // for (int ts = 0; ts < it->size(); ++ts) {
+      // 	sprintf(hname, "ADC_HO_%d_%d_%d_cap_%d", id.ieta(), id.iphi(), 
+      // 		id.depth(), (*it)[ts].capid());
+      // 	phist = histos_->GetAHistogramImpl(hname, HcalQLPlotHistoMgr::ADC, 
+      // 					   triggerID_);
+      // 	if (phist)
+      // 	  phist->Fill((*it)[ts].nominal_fC());
 
-	peds->second[(*it)[ts].capid()] += (*it)[ts].nominal_fC();
-	peds->second[(*it)[ts].capid()+4] += 1;
-      }
+      // 	peds->second[(*it)[ts].capid()] += (*it)[ts].nominal_fC();
+      // 	peds->second[(*it)[ts].capid()+4] += 1;
+      // }
     }
   }
 }
@@ -586,16 +610,16 @@ void HcalQLPlotAnalAlgos::processDigi(const HFDigiCollection& hfdigic)
 	for (int bin=0; bin<it->size(); bin++)
 	  phist->Fill((*it)[bin].adc());
       }
-      std::map< HcalDetId, std::vector<int> >::iterator peds = pedMap_.find(id);
-      if (peds == pedMap_.end()) {
-	std::vector<int> holder;
-	for (int i=0; i<8; ++i) holder.push_back(0);
-	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
-      }
-      for (int ts = 0; ts < it->size(); ++ts) {
-	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
-	peds->second[(*it)[ts].capid()+4] += 1;
-      }
+      // std::map< HcalDetId, std::vector<int> >::iterator peds = pedMap_.find(id);
+      // if (peds == pedMap_.end()) {
+      // 	std::vector<int> holder;
+      // 	for (int i=0; i<8; ++i) holder.push_back(0);
+      // 	peds = pedMap_.insert(std::pair< HcalDetId, std::vector<int> >(id, holder)).first;
+      // }
+      // for (int ts = 0; ts < it->size(); ++ts) {
+      // 	peds->second[(*it)[ts].capid()] += (*it)[ts].adc();
+      // 	peds->second[(*it)[ts].capid()+4] += 1;
+      // }
     }
   }
 }

@@ -1,5 +1,5 @@
 from ROOT import RooDataSet, RooRealVar, RooGaussian, RooArgSet, RooFit,\
-     gPad, RooAddPdf, RooWorkspace
+     gPad, RooAddPdf, RooWorkspace, RooFormulaVar, RooArgList
 
 def fillDataSet(data, x, N, dsName = 'ds'):
     cols = RooArgSet(x)
@@ -46,10 +46,10 @@ def findOnePe(hist, ws, name='x'):
     ped = ws.pdf('ped')
     pedWidth = ws.var('pedWidth')
 
-    peMean = RooRealVar('peMean', 'mean_{pe}', 5., hist.GetBinLowEdge(1),
-                        hist.GetBinLowEdge(hist.GetNbinsX()))
+    peMean = RooRealVar('peMean', 'mean_{pe}', 4., 0., 20.)
+    pem = RooFormulaVar('pem', '@0+@1', RooArgList(peMean, ws.var('pedMean')))
     peWidth = RooRealVar('peWidth', 'width_{pe}', pedWidth.getVal(), 0., 10.)
-    firstPe = RooGaussian('firstPe', 'firstPe', x, peMean, pedWidth)
+    firstPe = RooGaussian('firstPe', 'firstPe', x, pem, pedWidth)
 
     fped = RooRealVar('fped', 'f_{ped}', 0.8, 0., 1.)
 
@@ -83,7 +83,7 @@ def findOnePe(hist, ws, name='x'):
     secondMaxx = hist.GetBinCenter(secondMax)
     print 'found 2nd maximum in bin',secondMax,'value',secondMaxx
 
-    x.setRange('pedPlus_fit', x.getMin(), secondMaxx+pedWidth.getVal()*2)
+    x.setRange('pedPlus_fit', x.getMin(), ws.var('pedMean').getVal()+pedWidth.getVal()*5.)
 
     pedPlusOne.fitTo(ws.data('ds'), RooFit.Minos(False),
                      RooFit.Range('pedPlus_fit'), RooFit.PrintLevel(0))

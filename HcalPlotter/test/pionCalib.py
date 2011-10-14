@@ -44,8 +44,8 @@ def passesCuts(event):
     if (event.triggerID != 4):
         return False
     # event is complete
-    if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
-           (event.NEBrecHits != 1700):
+    if (event.NHBdigis != NHB) or (event.NHOdigis != NHO) \
+           or (event.NEBrecHits != NEB):
     ## if (event.NHBdigis != 72) or (event.NHOdigis != 34):
         return False
     # is a pion
@@ -63,8 +63,10 @@ outFile = TFile(opts.outputFile, 'recreate')
 
 dataTree = inFile.Get("plotanal/dataTree");
 
+NHB = int(dataTree.GetMaximum('NHBdigis'))
+NHO = int(dataTree.GetMaximum('NHOdigis'))
+NEB = int(dataTree.GetMaximum('NEBrecHits'))
 calibData = {}
-calibDataHO = {}
 
 trivialConst = [1.0]*maxDim*maxDim*maxDepth
 trivialConst[0] = 1.0
@@ -158,16 +160,6 @@ for event in dataTree:
                         calibData[Ename] = []
                     calibData[Ename].append(event.HBE[tmpIndex]*\
                                             trivialConst[tmpIndex])
-            ## tmpIndex = HcalIndex(e,p)
-            ## if (tmpIndex > 0):
-            ##     Ename = 'ho_{0}_{1}'.format(e,p)
-            ## if not (Ename in calibDataHO.keys()):
-            ##     calibDataHO[Ename] = []
-            ## calibDataHO[Ename].append(event.HOE[tmpIndex]*\
-            ##                         trivialConstHO[tmpIndex])
-
-## print 'events passed:', passed,\
-##       'events kept:', len(calibData[calibData.keys()[0]])
 
 prelim.BufferEmpty()
 #prelim.Draw()
@@ -175,7 +167,6 @@ prelim.BufferEmpty()
 minner = runMinimization(calibData, beamE)
 
 calibConst = list(trivialConst)
-calibConstHO = list(trivialConstHO)
 
 for par in range(1, minner.GetNumberTotalParameters()):
     parName = minner.GetParName(par)
@@ -194,11 +185,6 @@ for par in range(1, minner.GetNumberTotalParameters()):
         caldepth = int(digits[2])
         calIndex = HcalIndex(calieta,caliphi,caldepth)
         print 'HB ({0},{1},{2}):'.format(calieta,caliphi,caldepth),
-    elif (parName[:2] == 'ho'):
-        calieta = int(digits[0])
-        caliphi = int(digits[1])
-        calIndex = HcalIndex(calieta,caliphi)
-        print 'HO ({0},{1},4):'.format(calieta,caliphi),
     if calIndex >= 0:
         parSignif = abs(1.0-parVal)/parErr
         parVal *= trivialConst[calIndex]

@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnal.cc,v 1.1 2011/07/20 11:33:58 andersj Exp $
+// $Id: HcalQLPlotAnal.cc,v 1.2 2011/07/21 12:09:22 andersj Exp $
 //
 //
 
@@ -198,17 +198,17 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent,
     algo_->processRH(*ebrh);
     ebCnt_ += ebrh->size();
   }
-  edm::Handle<HFDigiCollection> hfdg;
-  iEvent.getByLabel(hcalDigiLabel_,hfdg);
+  // edm::Handle<HFDigiCollection> hfdg;
+  // iEvent.getByLabel(hcalDigiLabel_,hfdg);
 
-  if (!hfdg.isValid()) {
-    // can't find it!
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HF Digis/RecHits "
-      "not found";
-  } else {
-    algo_->processDigi(*hfdg);
-    hfDigiCnt_ += hfdg->size();
-  }
+  // if (!hfdg.isValid()) {
+  //   // can't find it!
+  //   edm::LogWarning("HcalHOTBPlotAnal::analyze") << "One of HF Digis/RecHits "
+  //     "not found";
+  // } else {
+  //   algo_->processDigi(*hfdg);
+  //   hfDigiCnt_ += hfdg->size();
+  // }
 
   // edm::Handle<HFRecHitCollection> hfrh;
   // iEvent.getByLabel(hfRHLabel_,hfrh);

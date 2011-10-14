@@ -46,8 +46,8 @@ outFile = TFile(opts.outputFile, 'recreate')
 
 dataTree = inFile.Get("plotanal/dataTree");
 
-HBDigis = 72
-HODigis = 33
+HBDigis = int(dataTree.GetMaximum('NHBdigis'))
+HODigis = int(dataTree.GetMaximum('NHOdigis'))
 
 dataTree.SetEstimate(dataTree.GetEntries())
 

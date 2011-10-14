@@ -14,6 +14,8 @@ parser.add_option('-n', action='store_true', dest='noStartup', default=False,
                   help='do not run statup scripts')
 parser.add_option('-c', '--calib', dest='initCalib', default='',
                   help='starting calibration')
+parser.add_option('--ho', dest='initCalibHO', default='',
+                  help='starting HO calibration')
 parser.add_option('-d', '--depths', action='store_true', dest='depths',
                   default=False, help='use 4 HB depths')
 parser.add_option('--beam', dest='beamE', type='float', default=100.,
@@ -44,9 +46,9 @@ def passesCuts(event):
     if (event.triggerID != 4):
         return False
     # event is complete
-    if (event.NHBdigis != 68) or (event.NHOdigis != 33) or \
-           (event.NEBrecHits != 1700):
-    ## if (event.NHBdigis != 72) or (event.NHOdigis != 34):
+    if (event.NHBdigis != NHB) or (event.NHOdigis != NHO) \
+           or (event.NEBrecHits != NEB):
+    # if (event.NHBdigis != 72) or (event.NHOdigis != 34):
         return False
     ## # is a pion
     ## if (event.VMBadc > 50):
@@ -67,8 +69,10 @@ HOHist = TH1F("HOHist", "HO Energy", 200, 0., opts.beamE*1.5)
 HOHist.GetXaxis().SetTitle("HO energy (mips)")
 EBHist = TH1F("EBHist", "EB Energy", 100, 5., opts.beamE*1.3)
 EBHist.GetXaxis().SetTitle("EB energy (GeV)")
-BarrelHist = TH1F("BarrelHist", "HB+EB Energy", 100, 5., opts.beamE*2)
-BarrelHist.GetXaxis().SetTitle("HB+EB Energy (GeV)")
+BarrelHist = TH1F("BarrelHist", "EB+HB Energy", 100, opts.beamE/3., opts.beamE*2)
+BarrelHist.GetXaxis().SetTitle("EB+HB Energy (GeV)")
+AllCaloHist = TH1F("AllCaloHist", "EB+HB+HO Energy", 100, opts.beamE/3., opts.beamE*2)
+AllCaloHist.GetXaxis().SetTitle("EB+HB+HO Energy (GeV)")
 BarrelvHO = TH2F("BarrelvHO", "HO v. EB+HB", 100, 5., opts.beamE*2,
                  200, 2., opts.beamE*1.5);
 BarrelvHO.GetXaxis().SetTitle("EB+HB Energy (GeV)");
@@ -82,12 +86,17 @@ BarrelvHOCorr.GetXaxis().SetTitle("EB+HB Energy (GeV)");
 BarrelvHOCorr.GetYaxis().SetTitle("HO Energy (mips)");
 
 dataTree = inFile.Get("plotanal/dataTree");
+NHB = int(dataTree.GetMaximum('NHBdigis'))
+NHO = int(dataTree.GetMaximum('NHOdigis'))
+NEB = int(dataTree.GetMaximum('NEBrecHits'))
 
 calibConst = [1.0]*maxDim*maxDim*maxDepth
 calibConstHO = [1.]*maxDim*maxDim
 
 if len(opts.initCalib) > 0:
     calibConst = loadCalibration(opts.initCalib)
+if len(opts.initCalibHO) > 0:
+    calibConstHO = loadCalibration(opts.initCalibHO)
 
 HBdepths = 2
 if (opts.depths):
@@ -169,9 +178,12 @@ for event in dataTree:
 
     BarrelHist.Fill(HB9 + EB81)
     
-    HOmip = HcalEnergyAround(event.HOE, ieta, iphi, calib=calibConstHO,
-                             radius = 0)
+    HOmip = HcalEnergyAround(event.HOE, ieta, iphi, radius = 0)
+    HO9 = HcalEnergyAround(event.HOE, ieta, iphi, calib=calibConstHO,
+                           radius = 1)
     HOHist.Fill(HOmip/opts.mipHO)
+
+    AllCaloHist.Fill(EB81+HB9+HO9)
 
     if (opts.NP > 0) and (opts.fCpe != 0):
         pes = HOmip/opts.fCpe
@@ -198,11 +210,14 @@ HBHist = f.Get('HBHist')
 HOHist = f.Get('HOHist')
 EBHist = f.Get('EBHist')
 BarrelHist = f.Get("BarrelHist")
+AllCaloHist = f.Get("AllCaloHist")
 BarrelvHO = f.Get('BarrelvHO')
 VMBHist = f.Get('VMBHist')
 HOCorr = f.Get('HOCorr')
 BarrelvHOCorr = f.Get('BarrelvHOCorr')
 
+c4 = TCanvas('c4', 'EB Energy')
+EBHist.Draw()
 c1 = TCanvas("c1", "HB Energy")
 HBHist.Draw()
 c2 = TCanvas("c2", "Barrel Energy")
@@ -210,8 +225,8 @@ BarrelHist.Draw()
 c3 = TCanvas('c3', 'HO MIPs')
 c3.SetLogy()
 HOHist.Draw()
-c4 = TCanvas('c4', 'EB Energy')
-EBHist.Draw()
+c8 = TCanvas('c8', 'All Calo Energy')
+AllCaloHist.Draw()
 c5 = TCanvas('c5', 'HO v. Barrel')
 c5.SetRightMargin(0.15)
 c5.SetLogz()

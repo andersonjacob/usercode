@@ -45,6 +45,14 @@ hcales_ascii = cms.ESSource(
             file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HamO_HamO_HO_HPD_SiPM.txt')
             ),
         ## cms.PSet(
+        ##     object = cms.string('Pedestals'),
+        ##     file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HamE_HamO_HO_HPD_SiPM.txt')
+        ##     ),
+##         cms.PSet(
+##             object = cms.string('Pedestals'),
+##             file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_FBK_HamO_HO_HPD_SiPM.txt')
+##             ),
+        ## cms.PSet(
         ##     object = cms.string('Gains'),
         ##     file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HBHO_HPD.txt')
         ##     )
