@@ -30,7 +30,7 @@ process.maxEvents = cms.untracked.PSet(
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-    "file:moe5/EcalHcalCombined2011_{0:08d}.0.root".format(RUNNUMBER),
+    "file:tb_data/EcalHcalCombined2011_{0:08d}.0.root".format(RUNNUMBER),
     )
 )
 

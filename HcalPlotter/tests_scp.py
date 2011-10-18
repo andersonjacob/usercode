@@ -30,16 +30,16 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
 )
 inFileName = 'EcalHcalCombined2011_{0:08d}.0.root'.format(RUNNUMBER)
-if not os.access('moe5/{0}'.format(inFileName), os.R_OK):
+if not os.access('tb_data/{0}'.format(inFileName), os.R_OK):
     cmd = ['scp','-Cp','daq@cmsmoe5:/data0/spool/{0}'.format(inFileName),
-           'moe5/{0}'.format(inFileName)]
+           'tb_data/{0}'.format(inFileName)]
     print ' '.join(cmd)
     subprocess.call(cmd)
     
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-    "file:moe5/{0}".format(inFileName),
+    "file:tb_data/{0}".format(inFileName),
     )
 )
 

@@ -99,7 +99,7 @@ if (iphi == 0):
     print 'hb iphi:',iphi,'eb iphi:',ecalXtaliphi
 
 
-qualCut = '(NHOdigis=={0})&&(VMBadc>50.)'.format(HODigis)
+qualCut = '(NHOdigis=={0})&&(VMBadc>360)'.format(HODigis)
 #qualCut = '(NHOdigis=={0})&&(VMBadc>50.)&&(VMFadc>100.)&&(VMFadc<1500)&&(S3adc>0.)'.format(HODigis)
 #qualCut = '(NHOdigis=={0})'.format(HODigis)
 pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
