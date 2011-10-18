@@ -16,9 +16,13 @@ hcales_ascii = cms.ESSource(
         ##     object = cms.string('ElectronicsMap'),
         ##     file = cms.FileInPath('andersj/HcalPlotter/data/tb2011_map_HB_HPD_HO_SiPM.txt')
         ##     ),
+##         cms.PSet(
+##         object = cms.string('ElectronicsMap'),
+##         file = cms.FileInPath('andersj/HcalPlotter/data/map_tb2011_HB_ODU_ODU_HO_HPD_SiPM.txt')
+##         ),
         cms.PSet(
         object = cms.string('ElectronicsMap'),
-        file = cms.FileInPath('andersj/HcalPlotter/data/map_tb2011_HB_ODU_ODU_HO_HPD_SiPM.txt')
+        file = cms.FileInPath('andersj/HcalPlotter/data/map_tb2011_HB_HPD_ODU_HO_SiPM.txt')
         ),
         ## cms.PSet(
         ## object = cms.string('ElectronicsMap'),
@@ -40,9 +44,13 @@ hcales_ascii = cms.ESSource(
         ##     object = cms.string('Pedestals'),
         ##     file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_ODU_ODU_HO_HPD_SiPM.txt')
         ##     ),
+##         cms.PSet(
+##             object = cms.string('Pedestals'),
+##             file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HamO_HamO_HO_HPD_SiPM.txt')
+##             ),
         cms.PSet(
             object = cms.string('Pedestals'),
-            file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HamO_HamO_HO_HPD_SiPM.txt')
+            file = cms.FileInPath('andersj/HcalPlotter/data/ped_tb2011_HB_HPD_ODU_HO_SiPM.txt')
             ),
         ## cms.PSet(
         ##     object = cms.string('Pedestals'),
@@ -60,9 +68,13 @@ hcales_ascii = cms.ESSource(
         ## object = cms.string('Gains'),
         ## file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HB_HPD_HO_HPD_SiPM.txt')
         ## )
+##         cms.PSet(
+##             object = cms.string('Gains'),
+##             file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HB_ODU_ODU_HO_HPD_SiPM.txt')
+##             )
         cms.PSet(
             object = cms.string('Gains'),
-            file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HB_ODU_ODU_HO_HPD_SiPM.txt')
+            file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HB_HPD_ODU_HO_SiPM.txt')
             )
         )
     )
