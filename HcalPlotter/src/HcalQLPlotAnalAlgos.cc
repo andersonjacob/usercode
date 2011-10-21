@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnalAlgos.cc,v 1.7 2011/08/09 21:56:43 andersj Exp $
+// $Id: HcalQLPlotAnalAlgos.cc,v 1.8 2011/10/14 17:51:23 andersj Exp $
 //
 //
 
@@ -65,6 +65,8 @@ HcalQLPlotAnalAlgos::HcalQLPlotAnalAlgos(const edm::ParameterSet& histoParams) :
   triggerID_=HcalQLPlotHistoMgr::UNKNOWN;
   //edm::Service<TFileService>  fs;
   histos_ = new HcalQLPlotHistoMgr(*fs,histoParams);
+  ietaTable = histoParams.getParameter<int>("ieta");
+  iphiTable = histoParams.getParameter<int>("iphi");
   dataTree = fs->make<TTree>("dataTree", "dataTree");
   dataTree->Branch("triggerID", &triggerID_, "triggerID/I");
   dataTree->Branch("VMBadc", &VMBadc_, "VMBadc/D");
@@ -260,10 +262,12 @@ void HcalQLPlotAnalAlgos::processBeamCounters()
 void HcalQLPlotAnalAlgos::setHBTableEtaPhi( double eta, double phi ) {
   HBTableEta = eta;
   HBTablePhi = phi;
-  ietaTable = int(eta/0.087);
-  if (ietaTable > 0) ietaTable++;
-  else ietaTable--;
-  iphiTable = int(phi/0.087) + 1;
+  if ((eta > 0.) && (phi > 0.)) {
+    ietaTable = int(eta/0.087);
+    if (ietaTable > 0) ietaTable++;
+    else ietaTable--;
+    iphiTable = int(phi/0.087) + 1;
+  }
 }
 
 void HcalQLPlotAnalAlgos::processRH(const HBHERecHitCollection& hbherhc,

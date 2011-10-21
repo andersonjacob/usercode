@@ -17,14 +17,21 @@ if len(sys.argv) > 2:
     #print sys.argv
     arg1 = sys.argv[2]
     RUNNUMBER = int(arg1)
+    inputieta = int(sys.argv[3])
+    inputiphi = int(sys.argv[4])
     #print arg1
 else:
     RUNNUMBER = 0
 if (RUNNUMBER < 1):
-    print "Enter Runnumber: "
-    rn = sys.stdin.readline()
-    RUNNUMBER = int(rn.strip())
-print "Running on: {0:08d}".format(RUNNUMBER)
+    rn = input("Enter Runnumber: ")
+    RUNNUMBER = int(rn)
+    tmp = input("Enter hb table ieta: ")
+    inputieta = int(tmp)
+    tmp = input("Enter hb table iphi: ")
+    inputiphi = int(tmp)
+print "Running on: {0:08d} table coordinates ({1},{2})".format(RUNNUMBER,
+                                                               inputieta,
+                                                               inputiphi)
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
@@ -131,7 +138,9 @@ process.plotanal=cms.EDAnalyzer(
         beamGeVhi  = cms.double(500),
         #beamGeVhi  = cms.double(80*200),
         timeNSlo   = cms.double(50),
-        timeNShi   = cms.double(250)
+        timeNShi   = cms.double(250),
+        ieta = cms.int32(inputieta),
+        iphi = cms.int32(inputiphi)
         )
     )
 

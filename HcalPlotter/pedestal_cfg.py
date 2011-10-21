@@ -1,5 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 import sys
+import os
+import re
 
 process = cms.Process("Demo")
 
@@ -28,10 +30,13 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
 )
 
+datadir = 'tb_data'
+
+files = ['file:{0}/{1}'.format(datadir,x) for x in os.listdir(datadir) \
+         if re.search('_{0:08d}\.\d+'.format(RUNNUMBER), x)]
+
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-    "file:moe5/EcalHcalCombined2011_{0:08d}.0.root".format(RUNNUMBER),
-    )
+    fileNames = cms.untracked.vstring(files)
 )
 
 process.TFileService = cms.Service("TFileService",

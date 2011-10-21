@@ -49,7 +49,7 @@ def passesCuts(event):
     ## if (event.NHBdigis != 72) or (event.NHOdigis != 34):
         return False
     # is a pion
-    if (event.VMBadc > 50):
+    if (event.VMBadc > 400):
         return False
     return True
 

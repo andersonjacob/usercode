@@ -148,7 +148,7 @@ for event in dataTree:
         ecalXtalieta = ieta*5-2
         ecalXtaliphi = ebMaxPhi - (iphi*5-2)
 
-    if EvtN%500 == 1:
+    if EvtN%5000 == 1:
         print 'record:',EvtN,
         print '(ieta,iphi):', '({0},{1})'.format(ieta,iphi),
         print 'Xtal (ieta,iphi): ({0},{1})'.format(ecalXtalieta,ecalXtaliphi)
@@ -169,7 +169,8 @@ for event in dataTree:
         HB9 += HcalEnergyAround(event.HBE, ieta, iphi, depth=d,
                                 calib=calibConst)
     if opts.doi > 0:
-        HBdoi = HcalEnergyAround(event.HBE, ieta, iphi, depth=opts.doi)
+        HBdoi = HcalEnergyAround(event.HBE, ieta, iphi, depth=opts.doi,
+                                 radius = 0)
         HBDoiHist.Fill(HBdoi/opts.fCpe*opts.doiScale)
         HBDoiMipHist.Fill(HBdoi/opts.doiMIP)
         for ts in range(0, 10):

@@ -13,7 +13,7 @@
 //
 // Original Author:  Phillip R. Dudero
 //         Created:  Tue Jan 16 21:11:37 CST 2007
-// $Id: HcalQLPlotAnal.cc,v 1.2 2011/07/21 12:09:22 andersj Exp $
+// $Id: HcalQLPlotAnal.cc,v 1.3 2011/10/14 17:51:23 andersj Exp $
 //
 //
 
@@ -152,6 +152,14 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent,
   } else {
     algo_->setHBTableEtaPhi(pos->hbheTableEta(), pos->hbheTablePhi());
   }
+  edm::Handle<EcalRecHitCollection> ebrh;
+  iEvent.getByLabel(ebRHLabel_, ebrh);
+  if (!ebrh.isValid()) {
+    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "EB rec hits not found";
+  } else {
+    algo_->processRH(*ebrh);
+    ebCnt_ += ebrh->size();
+  }
   edm::Handle<HBHEDigiCollection> hbhedg;
   iEvent.getByLabel(hcalDigiLabel_,hbhedg);
   if (!hbhedg.isValid()) {
@@ -188,15 +196,6 @@ HcalHOTBPlotAnal::analyze(const edm::Event& iEvent,
       "not found";
   } else {
     algo_->processRH(*horh,*hodg);
-  }
-  
-  edm::Handle<EcalRecHitCollection> ebrh;
-  iEvent.getByLabel(ebRHLabel_, ebrh);
-  if (!ebrh.isValid()) {
-    edm::LogWarning("HcalHOTBPlotAnal::analyze") << "EB rec hits not found";
-  } else {
-    algo_->processRH(*ebrh);
-    ebCnt_ += ebrh->size();
   }
   // edm::Handle<HFDigiCollection> hfdg;
   // iEvent.getByLabel(hcalDigiLabel_,hfdg);
