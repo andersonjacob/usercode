@@ -111,6 +111,8 @@ if opts.hb:
 if opts.digi:
     #HOTower = '(HODigi[2]+HODigi[3]+HODigi[4]+HODigi[5]+HODigi[6]+HODigi[7])'
     HOTower = '(HODigi[3]+HODigi[4]+HODigi[5]+HODigi[6])'
+    if opts.hb:
+        HOTower = '(HBDigi[3][{0}]+HBDigi[4][{0}]+HBDigi[5][{0}]+HBDigi[6][{0}])'.format(opts.depth)
 
 ## print '{0}'.format(HOTower),\
 ##       '(eta,phi): ({0:0.2f},{1:0.2f})'.format(event.HBTableEta,
@@ -181,8 +183,10 @@ if havePeds:
         pedDS.plotOn(xfped)
         if opts.sipm:
             ws.pdf('pedPlusOne').plotOn(xfped)
+            ws.pdf('pedPlusOne').paramOn(xfped)
         else:
             ws.pdf('ped').plotOn(xfped)
+            ws.pdf('ped').paramOn(xfped)
 
         c1 = TCanvas('c1', 'pedestal')
         xfped.Draw()
@@ -255,7 +259,7 @@ if (sig_hist.GetEntries > 0):
     xf.Draw()
     # fitter.Print('v')
     # raise 'Stop here'
-    fitter.fitTo(sigDS, RooFit.Minos(False))
+    fr = fitter.fitTo(sigDS, RooFit.Minos(False), RooFit.Save(True))
     fitter.plotOn(xf)
     if (fmip.getVal() < 0.9):
         lxgplus.plotOn(xf, RooFit.LineColor(kRed+2),
@@ -291,6 +295,7 @@ if (sig_hist.GetEntries > 0):
 
     ## langaupro(fpar,maxx, fwhm)
 
+    fr.Print('v')
     print 'for {0} MIP MPV: {1:0.2f} +/- {2:0.2f}'.format(HOTower,maxx,
                                                           maxxErr), \
           'S/N: {0:0.2f}'.format(maxx/savePedWidth),

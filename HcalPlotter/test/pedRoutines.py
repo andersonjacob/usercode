@@ -83,7 +83,7 @@ def findOnePe(hist, ws, name='x'):
     secondMaxx = hist.GetBinCenter(secondMax)
     print 'found 2nd maximum in bin',secondMax,'value',secondMaxx
 
-    x.setRange('pedPlus_fit', x.getMin(), ws.var('pedMean').getVal()+pedWidth.getVal()*5.)
+    x.setRange('pedPlus_fit', x.getMin(), ws.var('pedMean').getVal()+pedWidth.getVal()*6.)
 
     pedPlusOne.fitTo(ws.data('ds'), RooFit.Minos(False),
                      RooFit.Range('pedPlus_fit'), RooFit.PrintLevel(0))

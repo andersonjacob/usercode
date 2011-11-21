@@ -134,6 +134,39 @@ def findBeamCaloCoords(data):
 
     return (int(ieta), int(iphi), int(xtalieta), int(xtaliphi))
 
+def loadConfig(filename):
+    conf = {
+        'HBmip1': 1.0,
+        'HBmip2': 1.0,
+        'HBmip3': 1.0,
+        'HBmip4': 1.0,
+        'HOmip': 1.0,
+        'HBfCpe1': 1.0,
+        'HBfCpe2': 1.0,
+        'HBfCpe3': 1.0,
+        'HBfCpe4': 1.0,
+        'HOfCpe': 1.0,
+        'beamE': 150.,
+        'HBNP1': 0,
+        'HBNP2': 0,
+        'HBNP3': 0,
+        'HBNP4': 0,
+        'HONP': 0
+        }
+    if len(filename) > 0:
+        for line in open(filename).readlines():
+            tokens = line.rstrip().split('=')
+            if (len(tokens) == 2):
+                theKey = tokens[0].rstrip()
+                theVal = tokens[1].rstrip()
+                if theKey in conf:
+                    conf[theKey] = type(conf[theKey])(theVal)
+                else:
+                    print 'unknown key',theKey,'with value',theVal
+            else:
+                print 'print invalid line:',line.rstrip()
+
+    return conf
 
 import cPickle as pickle
 

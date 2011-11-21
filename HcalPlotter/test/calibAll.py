@@ -53,7 +53,7 @@ def passesCuts(event):
     # if (event.NHBdigis != 72) or (event.NHOdigis != 34):
         return False
     # is a pion
-    if (event.VMBadc > 50):
+    if (event.VMBadc > 400):
         return False
     return True
 
@@ -213,12 +213,12 @@ for par in range(1, minner.GetNumberTotalParameters()):
         parSignif = abs(1.0-parVal)/parErr
         parVal *= trivialConst[calIndex]
         #parErr *= trivialConst[calIndex]
-        print 'initial value: {0:0.3f}'.format(trivialConst[calIndex]),
+        print 'initial value: {0:0.4f}'.format(trivialConst[calIndex]),
         if (parSignif > 0.5):
             calibConst[calIndex] = parVal
-        elif opts.refine and (parSignif > 0.25):
+        elif opts.refine and (parSignif > 0.1):
             calibConst[calIndex] = parVal
-        print 'new value: {0:0.3f} "significance": {1:0.4f}'.format(parVal, parSignif)
+        print 'new value: {0:0.4f} "significance": {1:0.4f}'.format(parVal, parSignif)
     if (parName[:2] == 'ho'):
         calieta = int(digits[0])
         caliphi = int(digits[1])
@@ -235,7 +235,7 @@ for par in range(1, minner.GetNumberTotalParameters()):
             print 'new value: {0:0.3f} "significance": {1:0.4f}'.format(parVal, parSignif)
 
 BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., -1.0)
-BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., -1.0)
+BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., opts.beamE+resolution*5)
 BarrelBefore.SetLineColor(myBlue)
 
 EvtN = 0

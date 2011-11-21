@@ -197,7 +197,7 @@ for par in range(1, minner.GetNumberTotalParameters()):
         print 'new value: {0:0.3f} "significance": {1:0.4f}'.format(parVal, parSignif)
 
 BarrelBefore = TH1F("BarrelBefore", "Barrel Before", 100, 0., -1.0)
-BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., -1.0)
+BarrelAfter = TH1F("BarrelAfter", "Barrel After", 100, 0., opts.beamE+resolution*5.)
 BarrelBefore.SetLineColor(myBlue)
 
 EvtN = 0
