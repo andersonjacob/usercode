@@ -67,6 +67,8 @@ HBHist = TH1F("HBHist", "HB Energy", 100, 5., opts.beamE*1.6)
 HBHist.GetXaxis().SetTitle("HB energy (GeV)")
 HOHist = TH1F("HOHist", "HO Energy", 200, 0., opts.beamE*1.5)
 HOHist.GetXaxis().SetTitle("HO energy (mips)")
+HOHistPE = TH1F("HOHistPE", "HO Energy", 270, 100, 2800.)
+HOHistPE.GetXaxis().SetTitle("HO energy (pe)")
 EBHist = TH1F("EBHist", "EB Energy", 100, 5., opts.beamE*1.3)
 EBHist.GetXaxis().SetTitle("EB energy (GeV)")
 BarrelHist = TH1F("BarrelHist", "EB+HB Energy", 100, opts.beamE/3., opts.beamE*2)
@@ -80,12 +82,14 @@ BarrelvHO.GetYaxis().SetTitle("HO Energy (mips)");
 VMBHist = TH1F("VMBHist", "Back Muon Veto", 100, 0., 500.)
 HOCorr = TH1F("HOCorr", "HO Energy (corrected)", 200, 0., opts.beamE*1.5)
 HOCorr.GetXaxis().SetTitle("corrected HO energy (mips)")
+HOCorrPE = TH1F("HOCorrPE", "HO Energy (corrected)", 270, 100., 2800.)
+HOCorrPE.GetXaxis().SetTitle("corrected HO energy (pe)")
 BarrelvHOCorr = TH2F("BarrelvHOCorr", "HO (corrected) v. EB+HB", 100, 5.,
                      opts.beamE*2, 200, 2., opts.beamE*1.5);
-BarrelvHOCorr.GetXaxis().SetTitle("EB+HB Energy (GeV)");
-BarrelvHOCorr.GetYaxis().SetTitle("HO Energy (mips)");
+BarrelvHOCorr.GetXaxis().SetTitle("EB+HB Energy (GeV)")
+BarrelvHOCorr.GetYaxis().SetTitle("HO Energy (mips)")
 
-dataTree = inFile.Get("plotanal/dataTree");
+dataTree = inFile.Get("plotanal/dataTree")
 NHB = int(dataTree.GetMaximum('NHBdigis'))
 NHO = int(dataTree.GetMaximum('NHOdigis'))
 NEB = int(dataTree.GetMaximum('NEBrecHits'))
@@ -130,7 +134,7 @@ for event in dataTree:
         ecalXtalieta = ieta*5-2
         ecalXtaliphi = ebMaxPhi - (iphi*5-2)
 
-    if EvtN%500 == 1:
+    if EvtN%5000 == 1:
         print 'record:',EvtN,
         print '(ieta,iphi):', '({0},{1})'.format(ieta,iphi),
         print 'Xtal (ieta,iphi): ({0},{1})'.format(ecalXtalieta,ecalXtaliphi)
@@ -182,6 +186,7 @@ for event in dataTree:
     HO9 = HcalEnergyAround(event.HOE, ieta, iphi, calib=calibConstHO,
                            radius = 1)
     HOHist.Fill(HOmip/opts.mipHO)
+    HOHistPE.Fill(HOmip/opts.fCpe)
 
     AllCaloHist.Fill(EB81+HB9+HO9)
 
@@ -189,6 +194,7 @@ for event in dataTree:
         pes = HOmip/opts.fCpe
         newHO = correctSaturation(pes, opts.NP)*opts.fCpe
         HOCorr.Fill(newHO/opts.mipHO)
+        HOCorrPE.Fill(newHO/opts.fCpe)
         BarrelvHOCorr.Fill(HB9+EB81, newHO/opts.mipHO)
 
     BarrelvHO.Fill(HB9+EB81, HOmip/opts.mipHO)

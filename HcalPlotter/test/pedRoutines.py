@@ -1,5 +1,7 @@
 from ROOT import RooDataSet, RooRealVar, RooGaussian, RooArgSet, RooFit,\
-     gPad, RooAddPdf, RooWorkspace, RooFormulaVar, RooArgList
+     gPad, RooAddPdf, RooWorkspace, RooFormulaVar, RooArgList, RooMsgService
+
+RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
 def fillDataSet(data, x, N, dsName = 'ds'):
     cols = RooArgSet(x)
@@ -118,9 +120,6 @@ if __name__ == '__main__':
     sys.path.append(os.environ['HOME']+'/pyroot')
     del sys
     del os
-    import root_logon
-
-    from ROOT import TFile, TTree, gDirectory, TMath
     from optparse import OptionParser
 
     parser = OptionParser()
@@ -130,10 +129,17 @@ if __name__ == '__main__':
                       help='override table ieta position')
     (opts, args) = parser.parse_args()
 
+    import root_logon
+
+    from ROOT import TFile, TTree, gDirectory, TMath
+
     inFile = TFile(args[0])
     dataTree = inFile.Get("plotanal/dataTree")
 
-    pedCut = '(triggerID==1)&&(NHOdigis==33)'
+    HBDigis = int(dataTree.GetMaximum('NHBdigis'))
+    HODigis = int(dataTree.GetMaximum('NHOdigis'))
+
+    pedCut = '(triggerID==1)&&(NHOdigis=={0})'.format(HODigis)
     HOTower = 'HOE[{0}][{1}]'.format(opts.eta, opts.phi)
     dataTree.Draw(HOTower, pedCut, 'goff')
 
@@ -144,8 +150,8 @@ if __name__ == '__main__':
     #print 'minPed:',minPed,'maxPed:',maxPed
     minPed = int(minPed) - 2.5
     maxPed = int(maxPed) + 2.5
-    if (int(maxPed-minPed)/2)*2 < (maxPed-minPed):
-        maxPed += 1
+    while int((maxPed-minPed)/2.)*2. < (maxPed-minPed):
+        maxPed += 1.
     print 'minPed:',minPed,'maxPed:',maxPed
     dataTree.Draw('{0}>>pedhist({1},{2:0.1f},{3:0.1f}'.format(HOTower,
                                                               int(maxPed-minPed),
