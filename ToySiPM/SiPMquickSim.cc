@@ -24,7 +24,7 @@ static double const cutOff = 15.;
 
 double correctSaturation(double charge, int NP, double /*prehit*/,
 			 double xtalk = 0.) {
-  if (charge >= NP) return /*1.e6*/12.*NP;
+  if (charge >= NP) return /*1.e6*/7.7*NP;
   if (charge < NP*0.05) return charge;
   double val = TMath::Log(1.0 - charge/NP);
   val *= -NP;
@@ -52,7 +52,7 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
 	       Int_t QIEver = 0, Double_t gain = 1.0, 
 	       Bool_t gainMatch = kFALSE,
 	       Color_t tcolor = kBlue, int method = 1) {
-  Int_t const steps = 500;
+  Int_t const steps = 400;
   TF1 * linear = new TF1("linear", "[0]*x", 1./(NP*1.1), cutOff);
   linear->SetLineWidth(2);
   linear->SetLineColor(kBlack);
@@ -147,34 +147,36 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
     NormResponse->SetPoint(step, pes/Double_t(NP), 
 			   val/double(NP));
     double slope = respSlope(pes, NP, pctdamage);
-    double bwidth = wsum/double(trials);
+    double bwidth = wsum/double(trials)/gain;
     double error = analyticError(NP, pes, val, 1-pctdamage);
+    double rawError = error;
     error = sqrt(error*error + bwidth*bwidth/12);
-
-    corrrms = sqrt(corrrms*corrrms + bwidth*bwidth/12);
-    rms = sqrt(rms*rms + bwidth*bwidth/12);
 
     // if (pes/double(NP) > 6.) {
     //   std::cout << "pes: " << pes << " NP: " << NP << '\n'
     // 		<< "slope: " << slope << " bin width: " << bwidth << '\n'
     // 		<< "val: " << val << " rms: " << rms << " analytic error: " 
-    // 		<< error << '\n'
+    // 		<< rawError << " bin corrected error: " << error
+    // 		<< '\n'
     // 		<< "corrected: " << corrval << " corr rms: " << corrrms 
     // 		<< " analytic error/slope: " << (error/slope) << '\n'
     // 		<< "pct error: " << (rms/slope/double(pes)) << '\n'
     // 		<< '\n';
     // }
 
-    if (rms < error) rms = error;
-    if (corrrms < error/slope) corrrms = error/slope;
+    corrrms = sqrt(val + rawError*rawError + bwidth*bwidth/12);
+    rms = sqrt(rms*rms + bwidth*bwidth/12);
+
+    //if (rms < error) rms = error;
+    // if (corrrms < error/slope) corrrms = error/slope;
 
     NormResponse->SetPointError(step, 0., rms/double(NP));
     NormRMS->SetPoint(step, pes/Double_t(NP),
-		      rms/slope/double(pes));
+		      corrrms/slope/double(pes));
 
     Corrected->SetPoint(step, pes/double(NP), 
 			corrval/NP);
-    Corrected->SetPointError(step, 0., corrrms/double(NP));
+    Corrected->SetPointError(step, 0., corrrms/slope/double(NP));
     if (val <= lastStep) {
       platCnt++;
       val = lastStep;
@@ -183,7 +185,7 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
     lastpes = pes;
     Response->SetPoint(step, pes, val);
     Response->SetPointError(step, 0., rms);
-  } while (/*(platCnt < 2) && */(++step < steps) && (pes < cutOff*NP));
+  } while (/*(platCnt < 25) && */(++step < steps) && (pes < cutOff*NP));
   Response->Set(step);
   NormResponse->Set(step);
   NormRMS->Set(step);
@@ -254,7 +256,7 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
   c1->SetGridy();
 
   linear->Draw();
-  NormResponse->Draw("3L");
+  NormResponse->Draw("LX");
   NormRMS->Draw("L");
   Corrected->Draw("3L");
   c1->Update();
