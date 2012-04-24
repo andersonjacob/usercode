@@ -9,6 +9,7 @@
 #include "TDirectory.h"
 #include "TRegexp.h"
 #include "TSystem.h"
+#include "TStyle.h"
 
 /*
   plotSiPMHistory parameters
@@ -29,6 +30,7 @@ void plotSiPMHistory(TString fname,
 		     //int intperx, int TestGev, int TestGev2, 
 		     TString pxfname = "", 
 		     TString respfname = "" , TString occfname = "") {
+  gStyle->SetOptStat(0);
   ifstream ifs(fname.Data(), ifstream::in);
   TString firstLine;
   firstLine.ReadLine(ifs);

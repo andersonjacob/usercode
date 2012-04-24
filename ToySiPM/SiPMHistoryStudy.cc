@@ -27,37 +27,6 @@ static int Y11Time = int(Y11Times[0] + Y11Times[1] + 0.5);
 static int dt = 1;
 static int freq = 100;
 
-// double * cloneSiPM(int NP, double * SiPM) {
-//   double * dupe = new double[NP];
-//   for (int i=0; i<NP; ++i)
-//     dupe[i] = SiPM[i];
-//   return dupe;
-// }
-
-// void resetSiPM(int NP, double * SiPM) {
-//   for (int i=0; i<NP; ++i) SiPM[i] = 1.0;
-// }
-
-// double recoveryModel(double t, double rTime1, double recoveryPct1,
-// 		     double rTime2) {
-//   if (t < 0) return 1.0;
-//   if (t == 0) return 0.;
-//   double lt = TMath::Log10(t);
-//   double lrt1 = TMath::Log10(rTime1);
-//   double tau = recoveryPct1/lrt1;
-//   if (t < rTime1) return lt*tau;
-//   double lrt2 = TMath::Log10(rTime2);
-//   tau = (1.-recoveryPct1)/(lrt2-lrt1);
-//   double val = tau*(lt-lrt1)+recoveryPct1;
-//   return ((val<1.) ? val : 1.);
-// }
-
-// void recoverSiPM(int NP, double * SiPM, double tau, double dt) {
-//   for (int i=0; i<NP; ++i) {
-//     SiPM[i] = SiPM[i] + (1 - SiPM[i])*dt/tau;
-//   }
-// }
-
 double TriangleSmear(double * x, double * par) {
   double h = 2/(par[0] + par[1]);
   if (x[0] <= par[0])
@@ -66,85 +35,8 @@ double TriangleSmear(double * x, double * par) {
   return (val > 0) ? val : 0.0;
 }
 
-// double hitPixels(int NP, double * SiPM, int pes, double fraction) {
-//   unsigned int pixel;
-//   double sum = 0.;
-//   for (int pe = 0; pe < pes; ++pe) {
-//     pixel = gRandom->Integer(NP);
-//     sum += SiPM[pixel];
-//     SiPM[pixel] = fraction;
-//   }
-//   // if (sum > 0) {
-//   //   outfs << "pes: " << pes 
-//   // 	      << " fraction: " << fraction 
-//   // 	      << " sum: " << sum << "\n";
-//   // }
-//   return sum;
-// }
 
-// double hitPixelsQ(int NP, int pes, double eff = 1.) {
-//   if (pes < 1) return 0;
-//   assert((eff >= 0.)&&(eff<=1.));
-//   double alpha = pes/double(NP);
-//   double interp = 1. - TMath::Exp(-alpha);
-//   if (interp > 1.) interp = 1.;
-//   interp *= eff*NP;
-//   double sig2 = NP*TMath::Exp(-alpha)*(1-(1+alpha)*TMath::Exp(-alpha));
-//   double q;
-//   while (true) {
-//     q = gRandom->Gaus(interp, TMath::Sqrt(sig2+interp*(1-eff)));
-//     if ((q > 0.) && (q<=NP) && (q<=pes))
-//       return q;
-//   }
-// }
-
-// double QIE8Charge(double inputCharge) {
-//   // find the right bin an return the lower edge.
-//   return qie8.findEdge(inputCharge);
-//   return 0.;
-// }
-
-// double totalCharge(int NP, double * SiPM) {//, std::map<int,double>& history, 
-//   //		   double t, double rTime1, double recoveryPct1, 
-//   //		   double rTime2) {
-//   double totalcharge = 0.;
-//   // if (GenMode==1) {
-//   //   std::map<int,double>::iterator tq;
-//   //   totalcharge = NP;
-//   //   for (tq = history.begin(); tq != history.end(); ++tq) {
-//   //     totalcharge -= tq->second * (1 - recoveryModel(tq->first-t,rTime1,
-//   // 						     recoveryPct1, rTime2));
-//   //   }
-//   //   return totalcharge;
-//   // }
-//   for (int i=0; i<NP; ++i) totalcharge += SiPM[i];
-//   return totalcharge;
-// }
-
-double SiPMHistory (int pes, double t, SiPMModel& SiPM) {//,
-  //std::map<int,double>& history*/) {
-  // if (GenMode==1) {
-  //   double eff = totalCharge(NP, SiPM, history, t, rTime1, recoveryPct1, 
-  // 			     rTime2)/NP;
-  //   double q = hitPixelsQ(NP, pes, eff);
-  //   int it= int(t);
-  //   if (q > 0) {
-  //     std::map<int,double>::iterator tq = history.end();
-  //     if (history.size() > 0)
-  // 	--tq;
-  //     if ((tq != history.end()) && (tq->first == it)) 
-  // 	history[it] += q;
-  //     else history.insert(std::pair<int,double>(it,q));
-  //     // outfs << " NP: " << NP
-  //     // 		<< " eff: " << eff
-  //     // 		<< " t: " << t 
-  //     // 		<< " pes: " << pes 
-  //     // 		<< " q: " << q
-  //     // 		<< '\n';
-  //     // outfs.flush();
-  //   }
-  //   return q;
-  // }
+double SiPMHistory (int pes, double t, SiPMModel& SiPM) {
   return SiPM.hitPixels(pes, SiPM.recoveryModel(t));
 }
 
@@ -231,7 +123,7 @@ void EDUHistoryStudy (int etaBin = 3, int intperx = 1, float TestPulse[19] = 0,
   int testOffset = 0;
   //first layer of next depth
   int const depths = 5;
-  int depthBounds[depths] = {1,5,9,17,19};
+  int depthBounds[depths] = {1,5,11,17,19};
   if (etaBin > 4) {
     depthBounds[0] = 2;
     depthBounds[1] = 6;
@@ -355,7 +247,7 @@ void ODUHistoryStudy (int etaBin = 3, int intperx = 1, float TestPulse[19] = 0,
   int testOffset = 0;
 
   //first layer of next depth
-  int depthBounds[5] = {1,5,9,17,19};
+  int depthBounds[5] = {1,5,11,17,19};
   if (etaBin > 4) {
     depthBounds[0] = 2;
     depthBounds[1] = 6;
@@ -375,8 +267,8 @@ void ODUHistoryStudy (int etaBin = 3, int intperx = 1, float TestPulse[19] = 0,
   double truetp = 0., truetp2 = 0.;
 
   //set number of pixels for the depths
-  int LargeNP = int(NP*3.8+0.5);
-  int HONP = int(2.4*NP+0.5);
+  int LargeNP = int(NP*4.5+0.5);
+  int HONP = int(7.*NP+0.5);
   depthSiPM.setNP(LargeNP);
   int currNP = LargeNP;
   double tot;

@@ -9,12 +9,12 @@ def RunHistory(eta, bxints, NP, type, test, rTime1, rPct1, rTime2, pde, past,
                test2=0):
     logfile = createFileName(eta, bxints, NP, type, test, test2, rTime1,
                              rPct1, rTime2)
-    cmd = 'root -l -b -q \'SiPMHistoryStudy.cc+(100,' + str(eta) + \
+    cmd = 'root -l -b -q \'SiPMHistoryStudy.cc+(1000,' + str(eta) + \
           ',' + str(bxints) + ',' + str(NP) + ',' + str(type) + ',' + \
           str(past) + ',' + str(rTime1) + ',' + str(rPct1) + ',' + \
-          str(rTime2) + ',' + logfile + '.asc,' + str(pde) + \
-          ',0,\"peSpectrumByLayer7EtaBins.root\",\"LayerPes' + str(test) + \
-          'GeV.txt\",' + str(test2) +')\' 1> ' + logfile + '.log'
+          str(rTime2) + ',\"' + logfile + '.asc\",' + str(pde) + \
+          ',\"peSpectrumByLayer7EtaBins.root\",' + str(test) + \
+          ',' + str(test2) +')\' 1> ' + logfile + '.log'
 
     print cmd
     os.system(cmd)
@@ -25,14 +25,17 @@ def PlotHistory(eta, bxints, NP, type, test, rTime1, rPct1, rTime2,
                            rPct1, rTime2) + '.asc'
     tpe = "Type%dPx%dEta%dT1t%dTL%3.2fRt%d" % (type, NP, eta, rTime1, rPct1, rTime2)
     cmd = 'root -l -b -q \'plotSiPMHistory.cc+(\"' + fname + \
-          '\",\"plots/' + tpe + '\",' + str(bxints) + ',' + str(test) + ',' + \
-          str(test2) + ',\"tables/' + tpe + 'PxTab.tex\",\"tables/' + tpe + \
+          '\",\"plots/' + tpe + '\",\"tables/' + tpe + 'PxTab.tex\",\"tables/' + tpe + \
           'RespTab.tex\",\"tables/' + tpe + 'OccTab.tex\")\''
     print cmd
     os.system("mkdir -p plots/" + tpe)
     os.system(cmd)
     
 if __name__ == '__main__':
+    import sys
+    sys.path.append('/uscms/home/andersj/pyroot')
+    del sys
+
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("--etaBin", type="int", dest="etaBin", metavar="ETABIN",
@@ -63,6 +66,8 @@ if __name__ == '__main__':
     
 
     (options, args) = parser.parse_args()
+
+    # import root_logon
 
     if (options.edu is options.odu):
         parser.error("You must have only either an edu or an odu.");

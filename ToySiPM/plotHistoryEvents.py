@@ -1,3 +1,4 @@
+#! /usr/bin/python
 
 from optparse import OptionParser
 
@@ -10,9 +11,9 @@ parser.add_option('-b', action='store_true', dest='batch',
 (opts,args) = parser.parse_args()
 
 from ROOT import TTree,TFile,TH1F,TH1,gPad,gROOT,TCanvas
-import sys
-sys.path.append('/uscms/home/andersj/pyroot')
-import pyroot_logon
+#import sys
+#sys.path.append('/uscms/home/andersj/pyroot')
+import root_logon
 import re
 
 fname = args[0]
