@@ -8,7 +8,7 @@ process = cms.Process("Demo")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 500
-process.MessageLogger.suppressWarning.extend(["ecalRecHit"])
+process.MessageLogger.suppressWarning.extend(["ecalRecHit",'ecalEBunpacker'])
 
 process.load("andersj.HcalPlotter.hcal_tb11_cff")
 
