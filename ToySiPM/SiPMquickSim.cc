@@ -20,7 +20,6 @@ using std::cout;
 using std::endl;
 
 static double const tempConstraint = 0.1;
-static double const cutOff = 15.;
 
 double correctSaturation(double charge, int NP, double /*prehit*/,
 			 double xtalk = 0.) {
@@ -47,12 +46,40 @@ double analyticError(unsigned int NP, int pes, double val, double eff = 1.0) {
   return TMath::Sqrt(sig2 + val*(1-eff));
 }
 
+double timeDepResponse(SiPMModel& sipm, unsigned int pes, double dT = 0.) {
+  static TF1 Y11Shape("Y11Shape", "exp(-0.0635-0.1518*x)*x**2.528", 0., 80.);
+
+  int nbins = int(50./sipm.getTau()*5+0.5);
+  double dt = 50./nbins;
+
+  TH1D pedist("pedist", "pedist", nbins, 0., 50.);
+  // for (int pe = 0; pe < pes; ++pe)
+  //   pedist.Fill(Y11Shape.GetRandom());
+  pedist.FillRandom("Y11Shape", pes);
+
+  // pedist.Draw();
+  // gPad->Update();
+  // gPad->WaitPrimitive();
+
+  double sum = 0.;
+  for (int tbin = 1; tbin <= nbins; ++tbin) {
+    sum += sipm.hitPixels((unsigned int)pedist.GetBinContent(tbin), 0., dT);
+    sipm.expRecover(dt);
+  }
+
+  return sum;
+}
+
 void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
 	       double tempCoef = 0., double crossTalk = 0.,
 	       Int_t QIEver = 0, Double_t gain = 1.0, 
-	       Bool_t gainMatch = kFALSE,
+	       Bool_t gainMatch = kFALSE, double timeConst = 10.,
+	       bool doTimeDepSignal = false,
 	       Color_t tcolor = kBlue, int method = 1) {
-  Int_t const steps = 400;
+  Int_t const steps = 200;
+  double cutOff = 15.;
+  if (doTimeDepSignal)
+    cutOff *= 5;
   TF1 * linear = new TF1("linear", "[0]*x", 1./(NP*1.1), cutOff);
   linear->SetLineWidth(2);
   linear->SetLineColor(kBlack);
@@ -65,7 +92,7 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
   TGraphErrors * Corrected = new TGraphErrors(steps);
   Int_t pes = 0, step = 0, trial;
   Double_t val, sum, sum2, rms, corrval, corrsum, corrsum2, corrrms, wsum;
-  SiPMModel SiPM(NP, 10);
+  SiPMModel SiPM(NP, timeConst);
   SiPM.setCrossTalk(crossTalk);
   SiPM.setTempDep(tempCoef);
   static TRandom3 rnd(0);
@@ -110,7 +137,10 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
 				    tempCoef, dT, crossTalk);
       else {
 	SiPM.resetSiPM();
-	val = SiPM.hitPixels(rnd.Poisson(pes), 0., dT);
+	if (doTimeDepSignal)
+	  val = timeDepResponse(SiPM, rnd.Poisson(pes), dT);
+	else
+	  val = SiPM.hitPixels(rnd.Poisson(pes), 0., dT);
       }
       val *= gain;
       if (QIEver == 8) {

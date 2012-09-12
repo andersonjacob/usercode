@@ -251,7 +251,7 @@ void ODUHistoryStudy (int etaBin = 3, int intperx = 1, float TestPulse[19] = 0,
   if (etaBin > 4) {
     depthBounds[0] = 2;
     depthBounds[1] = 6;
-    depthBounds[2] = 10;
+    depthBounds[2] = 12;
     depthBounds[3] = 19;
     testOffset = 1;
   }

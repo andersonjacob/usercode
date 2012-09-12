@@ -63,6 +63,8 @@ if __name__ == '__main__':
                       default=500, help="which test file to use (1000 or 500)")
     parser.add_option("--test2", type="int", dest="test2", metavar="TESTGEV2",
                       default=1000, help="which second test file to use (1000 or 500), 0 for none")
+    parser.add_option('--plotOnly', action='store_true', dest='plotOnly',
+                      default=False, help="only plot don't run history again")
     
 
     (options, args) = parser.parse_args()
@@ -77,9 +79,10 @@ if __name__ == '__main__':
     SiPMType = 0
     if options.edu:
         SiPMType = 1
-    RunHistory(options.etaBin, options.intsperx, options.NP, SiPMType,
-               options.test, options.rTime1, options.rPct1, options.rTime2,
-               options.pde, options.past, options.test2)
+    if not options.plotOnly:
+        RunHistory(options.etaBin, options.intsperx, options.NP, SiPMType,
+                   options.test, options.rTime1, options.rPct1, options.rTime2,
+                   options.pde, options.past, options.test2)
     PlotHistory(options.etaBin, options.intsperx, options.NP, SiPMType,
                 options.test, options.rTime1, options.rPct1, options.rTime2,
                 options.test2)

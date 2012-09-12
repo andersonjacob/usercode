@@ -105,6 +105,7 @@ void plotSiPMHistory(TString fname,
   TCanvas *c1 = new TCanvas("c1", "c1", 600, 600);
   std::cout << std::endl;
   int depths = int(Resps.GetMaximum("Layer"));
+  std::cout << "maximum depth: " << depths << std::endl;
   char name[100];
   char title[200];
   char drawcmd[200];
@@ -155,7 +156,7 @@ void plotSiPMHistory(TString fname,
   // }
   // double dpulseResp = 0., dpulseResp2 = 0., dtest = 0., dtest2 = 0.;
 
-  for (int d=0; d<depths; ++d) {
+  for (int d=0; d<=depths; ++d) {
     //pedestal
     if (doPed) {
       sprintf(name, "PedsDepth%i", d);
@@ -172,7 +173,11 @@ void plotSiPMHistory(TString fname,
       if (peds) {
 	//std::cout << "got peds" << "\n";
 	if (peds->GetEntries() < 1.) continue;
+	c1->SetTitle(title);
 	peds->SetTitle(title);
+	peds->GetXaxis()->SetTitle("pedestal (p.e.)");
+	peds->GetYaxis()->SetTitle("events");
+
 	peds->Draw();
 	c1->Update();
 
@@ -205,7 +210,10 @@ void plotSiPMHistory(TString fname,
 	//std::cout << "got pixels" << "\n";
 	if (pixels->GetEntries() < 1.) continue;
 	if (avgpx->GetEntries() < 1.) continue;
+	c1->SetTitle(title);
 	pixels->SetTitle(title);
+	pixels->GetXaxis()->SetTitle("effective pixel count");
+	pixels->GetYaxis()->SetTitle("events");
 	pixels->Draw();
 	c1->Update();
 
@@ -237,7 +245,10 @@ void plotSiPMHistory(TString fname,
     if (resp) {
       //std::cout << "got pixels" << "\n";
       if (resp->GetEntries() < 1.) continue;
+      c1->SetTitle(title);
       resp->SetTitle(title);
+      resp->GetXaxis()->SetTitle("response (output/input)");
+      resp->GetYaxis()->SetTitle("events");
       resp->Draw();
       c1->Update();
 
@@ -267,7 +278,10 @@ void plotSiPMHistory(TString fname,
       if (resp2) {
 	//std::cout << "got pixels" << "\n";
 	if (resp2->GetEntries() < 1.) continue;
+	c1->SetTitle(title);
 	resp2->SetTitle(title);
+	resp2->GetXaxis()->SetTitle("response (output/input)");
+	resp2->GetYaxis()->SetTitle("events");
 	resp2->Draw();
 	c1->Update();
 
@@ -297,7 +311,10 @@ void plotSiPMHistory(TString fname,
       //std::cout << name << "\n";
       if (occ) {
 	//std::cout << "got pixels" << "\n";
+	c1->SetTitle(title);
 	occ->SetTitle(title);
+	occ->GetXaxis()->SetTitle("input p.e. during history");
+	occ->GetYaxis()->SetTitle("events");
 	occ->Draw();
 	c1->Update();
 	
