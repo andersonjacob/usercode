@@ -43,7 +43,7 @@
 #include "TBDataFormats/HcalTBObjects/interface/HcalTBBeamCounters.h"
 #include "TBDataFormats/HcalTBObjects/interface/HcalTBTiming.h"
 
-#include "andersj/HcalPlotter/src/HcalQLPlotAnalAlgos.h"
+#include "usercode/HcalPlotter/src/HcalQLPlotAnalAlgos.h"
 //
 // class declaration
 //

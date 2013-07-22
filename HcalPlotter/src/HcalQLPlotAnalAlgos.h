@@ -16,7 +16,7 @@
 #include "DataFormats/HcalDigi/interface/HcalCalibDataFrame.h"
 #include "TBDataFormats/HcalTBObjects/interface/HcalTBTriggerData.h"
 #include "TBDataFormats/HcalTBObjects/interface/HcalTBBeamCounters.h"
-#include "andersj/HcalPlotter/src/HcalQLPlotHistoMgr.h"
+#include "usercode/HcalPlotter/src/HcalQLPlotHistoMgr.h"
 
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 

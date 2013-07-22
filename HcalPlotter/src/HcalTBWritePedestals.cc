@@ -46,7 +46,7 @@
 #include "CalibFormats/HcalObjects/interface/HcalDbRecord.h"
 
 #include "TBDataFormats/HcalTBObjects/interface/HcalTBTriggerData.h"
-#include "andersj/HcalPlotter/src/HcalQLPlotHistoMgr.h"
+#include "usercode/HcalPlotter/src/HcalQLPlotHistoMgr.h"
 
 #include "TF1.h"
 //
@@ -96,7 +96,6 @@ namespace HcalTBWritePedestalImpl {
 			  HcalQLPlotHistoMgr * histos) {
     edm::ESHandle<HcalDbService> conditions;
     eventSetup.get<HcalDbRecord>().get(conditions);
-    const HcalQIEShape* shape = conditions->getHcalShape ();
 
     const_iter it;
     char hname[100];
@@ -121,6 +120,7 @@ namespace HcalTBWritePedestalImpl {
 	  detName = "";
 	}
 	const HcalQIECoder* channelCoder = conditions->getHcalCoder(id);
+	const HcalQIEShape* shape = conditions->getHcalShape (channelCoder);
 	HcalCoderDb coder (*channelCoder, *shape);
 
 	CaloSamples tool;
@@ -137,7 +137,8 @@ namespace HcalTBWritePedestalImpl {
 	  pedMap.find(id);
 	if (peds == pedMap.end()) {
 	  std::vector<double> holder[4];
-	  peds = pedMap.insert(std::pair< HcalDetId, std::vector<double>[4] >(id, holder)).first;
+	  std::map< HcalDetId, std::vector<double>[4] >::value_type p(id, holder);
+	  peds = pedMap.insert(p).first;
 	}
 	for (int ts = 0; ts < tool.size(); ++ts) {
 	  sprintf(hname, "ADC_%s_%d_%d_%d_cap_%d", detName.Data(), id.ieta(), 

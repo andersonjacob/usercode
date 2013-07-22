@@ -26,7 +26,7 @@
 // user include files
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "andersj/HcalPlotter/src/HcalQLPlotAnalAlgos.h"
+#include "usercode/HcalPlotter/src/HcalQLPlotAnalAlgos.h"
 #include "DataFormats/HcalDetId/interface/HcalElectronicsId.h"
 #include "DataFormats/HcalRecHit/interface/HcalCalibRecHit.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
