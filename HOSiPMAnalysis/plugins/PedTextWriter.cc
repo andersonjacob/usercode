@@ -20,6 +20,7 @@
 
 // system include files
 #include <memory>
+#include <fstream>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -32,6 +33,7 @@
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "DataFormats/Common/interface/Handle.h"
+#include "FWCore/Framework/interface/ESHandle.h"
 
 #include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
 #include "CalibFormats/HcalObjects/interface/HcalDbService.h"
@@ -43,7 +45,7 @@
 
 class PedTextWriter : public edm::EDAnalyzer {
 public:
-  typedef std::map< HcalDetId, std::vector<float>[4] > mapPerCap;
+  typedef std::map< HcalDetId, std::vector<float> > mapPerCap;
   explicit PedTextWriter(const edm::ParameterSet&);
   ~PedTextWriter();
 
@@ -60,7 +62,8 @@ private:
   //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
   //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
-      // ----------member data ---------------------------
+  void writeFile(char const * fname, mapPerCap& theMap);
+  // ----------member data ---------------------------
 
   edm::InputTag hcalDigiLabel_;
 
@@ -72,6 +75,30 @@ private:
 // constants, enums and typedefs
 //
 
+namespace PedTextWriterImpl {
+  template<class digic, class const_iter>
+  void processDigi(digic const& digis, HcalDbService const* conditions,
+		   PedTextWriter::mapPerCap& pedMap,
+		   PedTextWriter::mapPerCap& pedWidthMap,
+		   PedTextWriter::mapPerCap& gainMap) {
+
+    const_iter it;
+    for (it = digis.begin(); it != digis.end(); ++it) {
+      HcalDetId id(it->id());
+
+      HcalPedestal const * pedestal = conditions->getPedestal(id);
+      HcalPedestalWidth const * pedestalWidth = conditions->getPedestalWidth(id);
+      HcalGain const * gain = conditions->getGain(id);
+
+      for (int cap = 0; cap < 4; ++cap) {
+	pedMap[id].push_back(pedestal->getValue(cap));
+	pedWidthMap[id].push_back(pedestalWidth->getWidth(cap));
+	gainMap[id].push_back(gain->getValue(cap));
+      }
+      
+    }
+  }
+}
 //
 // static data member definitions
 //
@@ -79,8 +106,8 @@ private:
 //
 // constructors and destructor
 //
-PedTextWriter::PedTextWriter(const edm::ParameterSet& iConfig)
-
+PedTextWriter::PedTextWriter(const edm::ParameterSet& iConfig) :
+  hcalDigiLabel_(iConfig.getUntrackedParameter<edm::InputTag>("hcalDigiLabel"))
 {
    //now do what ever initialization is needed
 
@@ -106,17 +133,45 @@ PedTextWriter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
+   ESHandle<HcalDbService> conditions;
+   iSetup.get<HcalDbRecord>().get(conditions);
 
+   Handle<HBHEDigiCollection> hbhedigis;
+   iEvent.getByLabel(hcalDigiLabel_, hbhedigis);
+   if (!hbhedigis.isValid()) {
+   } else {
+     PedTextWriterImpl::processDigi<HBHEDigiCollection, 
+				    HBHEDigiCollection::const_iterator>
+       (*hbhedigis, conditions.product(), pedMap_, pedWidthMap_, gainMap_);
+   }
 
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-   Handle<ExampleData> pIn;
-   iEvent.getByLabel("example",pIn);
-#endif
-   
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-   ESHandle<SetupData> pSetup;
-   iSetup.get<SetupRecord>().get(pSetup);
-#endif
+   Handle<HODigiCollection> hodigis;
+   iEvent.getByLabel(hcalDigiLabel_, hodigis);
+   if (!hodigis.isValid()) {
+   } else {
+     PedTextWriterImpl::processDigi<HODigiCollection, 
+				    HODigiCollection::const_iterator>
+       (*hodigis, conditions.product(), pedMap_, pedWidthMap_, gainMap_);
+   }
+
+   Handle<HFDigiCollection> hfdigis;
+   iEvent.getByLabel(hcalDigiLabel_, hfdigis);
+   if (!hfdigis.isValid()) {
+   } else {
+     PedTextWriterImpl::processDigi<HFDigiCollection, 
+				    HFDigiCollection::const_iterator>
+       (*hfdigis, conditions.product(), pedMap_, pedWidthMap_, gainMap_);
+   }
+
+   Handle<ZDCDigiCollection> zdcdigis;
+   iEvent.getByLabel(hcalDigiLabel_, zdcdigis);
+   if (!zdcdigis.isValid()) {
+   } else {
+     PedTextWriterImpl::processDigi<ZDCDigiCollection, 
+				    ZDCDigiCollection::const_iterator>
+       (*zdcdigis, conditions.product(), pedMap_, pedWidthMap_, gainMap_);
+   }
+
 }
 
 
@@ -130,6 +185,50 @@ PedTextWriter::beginJob()
 void 
 PedTextWriter::endJob() 
 {
+  std::cout << "digi size: " << pedMap_.size() << '\n';
+
+  writeFile("pedestals.txt", pedMap_);
+  writeFile("pedestalWidths.txt", pedWidthMap_);
+  writeFile("gains.txt", gainMap_);
+}
+
+void PedTextWriter::writeFile(char const * fname, mapPerCap& theMap) {
+
+  std::ofstream outf(fname, std::ios::out | std::ios::trunc);
+
+  outf << "#U ADC\n"
+       << "# eta   phi   dep   det   cap1   cap2   cap3   cap4   HcalDetId\n";
+
+  mapPerCap::const_iterator it;
+
+  for (it = theMap.begin(); it != theMap.end(); ++it) {
+    outf << it->first.ieta() << "   "
+	 << it->first.iphi() << "   "
+	 << it->first.depth() << "   ";
+    switch (it->first.subdet()) {
+    case HcalBarrel:
+      outf << "HB   ";
+      break;
+    case HcalEndcap:
+      outf << "HE   ";
+      break;
+    case HcalForward:
+      outf << "HF   ";
+      break;
+    case HcalOuter:
+      outf << "HO   ";
+      break;
+    default :
+      std::cout << "unknown sub detector " << it->first << "\n";
+    }
+    outf << std::setprecision(4);
+    for (int cap = 0; cap<4; ++cap) {
+      outf << it->second[cap] << "   ";
+    }
+    outf << std::hex << it->first.rawId() << std::dec << "\n";
+  }
+
+  outf.close();
 }
 
 // ------------ method called when starting to processes a run  ------------
