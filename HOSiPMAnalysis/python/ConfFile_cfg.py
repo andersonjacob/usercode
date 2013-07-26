@@ -13,12 +13,10 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:mc', '')
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
-process.source = cms.Source("PoolSource",
-    # replace 'myfile.root' with the source file you want to use
-    fileNames = cms.untracked.vstring(
-        'file:///uscms_data/d2/andersj/HO/CMSSW_6_2_0_pre7/src/muons100_reco.root'
-    )
-)
+process.source = cms.Source("EmptySource",
+                            firstRun = cms.untracked.uint32(1),
+                            numberEventsInRun = cms.untracked.uint32(1)
+                            )
 
 process.demo = cms.EDAnalyzer(
     'PedTextWriter',

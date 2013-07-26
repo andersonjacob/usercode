@@ -29,7 +29,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(5)
+    input = cms.untracked.int32(50000)
 )
 
 # Input source
@@ -113,19 +113,21 @@ process.mix.digitizers.hcal.ho.photoelectronsToAnalog = cms.vdouble([4.0]*16)
 process.hcalRawData.HO = cms.untracked.InputTag("simHcalUnsuppressedDigis", "", "")
 
 #hard code conditions
-process.es_hardcode.toGet.extend(['ChannelQuality','RespCorrs','TimeCorrs'])
+#process.es_hardcode.toGet.extend(['ChannelQuality','RespCorrs','TimeCorrs'])
 
 #ascii file conditions
 process.hcales_ascii = hcales_ascii = cms.ESSource(
 	    "HcalTextCalibrations",
 	    input = cms.VPSet(
-		# cms.PSet(
-		# 	object = cms.string('Gains'),
-		# 	file = cms.FileInPath('andersj/HcalPlotter/data/gain_tb2011_HB_HPD_ODU_HO_SiPM.txt')
-		# 	)
+		cms.PSet(
+			object = cms.string('ChannelQuality'),
+			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/chan_qual_0.txt')
+			)
 		)
 	)
-		 
+
+process.hcalasciiprefer = cms.ESPrefer("HcalTextCalibrations", "hcales_ascii")
+
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
 process.simulation_step = cms.Path(process.psim)

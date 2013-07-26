@@ -3,4 +3,5 @@
 <use name="FWCore/ParameterSet"/>
 <use name="DataFormats/HcalDigi"/>
 <use name="CalibFormats/HcalObjects"/>
+<use name="CalibCalorimetry/HcalAlgos"/>
 <flags EDM_PLUGIN="1"/>
