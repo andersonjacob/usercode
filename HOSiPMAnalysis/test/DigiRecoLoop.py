@@ -15,6 +15,10 @@ def unpackHcalIndex(idx):
 
     return (det,z,eta,phi,depth,lay)
 
+from math import exp, atan, sin, cos
+def eta2theta(eta):
+    return 2*atan(exp(-eta))
+
 #2345678911234567892123456789312345678941234567895123456789612345678971234567898
 from optparse import OptionParser
 
@@ -58,8 +62,20 @@ EvtN = 0
 outFile = TFile(opts.outputFile, 'recreate')
 HOSimHitSum = TH1F("HOSimHitSum", 'Sum HO Sim Hits', 40, 0., 0.02)
 EnergyVsEta = TH2F("EnergyVsEta", "Energy vs Eta", 31, -15.5, 15.5, 50, 0., 0.05)
+SimTargetEt = TH1F("SimTargetEt", "SimTargetEt", 40, 0., 0.02)
 
-HO11RecHit = TH1F("HOTargetRecHit", "HO (target)", 40, 0., 5.)
+HOTargetRecHit = TH1F("HOTargetRecHit", "HO (target)", 40, -1., 5.)
+HOPedestalRecHit = TH1F("HOPedestalRecHit", "HO (target)", 40, -1., 5.)
+HOPedestalRecHit.SetLineColor(kRed)
+
+HOTargetDigi = TH1F("HOTargetDigi", "HO (target)", 50, 0., 300.)
+HOPedestalDigi = TH1F("HOPedestalDigi", "HO (target)", 50, 0., 300.)
+HOPedestalDigi.SetLineColor(kRed)
+
+ietaPed = -1*opts.ieta
+iphiPed = opts.iphi + 36
+if iphiPed > 72:
+    iphiPed -= 72
 
 for event in events:
     ## if EvtN > 9:
@@ -97,31 +113,44 @@ for event in events:
             sumHE += hit.energy()
             if (ieta == opts.ieta) and (iphi == opts.iphi):
                 sumHBTarget += hit.energy()
-
+    linEta = (opts.ieta > 0) if opts.ieta else opts.ieta+1
+    targetEta = (opts.ieta-1)*0.087 + 0.0435
     HOSimHitSum.Fill(sumSim)
+    SimTargetEt.Fill(sum11*sin(eta2theta(targetEta)))
     
     event.getByLabel(horecoLabel, horecoHandle)
     horeco = horecoHandle.product()
 
     for hohit in horeco:
         if (hohit.id().ieta() == opts.ieta) and (hohit.id().iphi() == opts.iphi):
-            HO11RecHit.Fill(hohit.energy())
+            HOTargetRecHit.Fill(hohit.energy()*sin(eta2theta(targetEta)))
+        if (hohit.id().ieta() == ietaPed) and (hohit.id().iphi() == iphiPed):
+            HOPedestalRecHit.Fill(hohit.energy()*sin(eta2theta(-targetEta)))
 
     event.getByLabel(simDigiLabel, simDigiHandle)
     simDigis = simDigiHandle.product()
 
-    # for simDigi in simDigis:
-    #     if (simDigi.id().ieta() == opts.ieta) and (simDigi.id().iphi()==opts.iphi):
-    #         for i in range(0, simDigi.size()):
-    #             HO11SimDigi.Fill(i, simDigi[i].nominal_fC())
+    for simDigi in simDigis:
+        if (simDigi.id().ieta() == opts.ieta) and (simDigi.id().iphi()==opts.iphi):
+            HOTargetDigi.Fill(simDigi[5].nominal_fC()+simDigi[6].nominal_fC())
+        if (simDigi.id().ieta() == ietaPed) and (simDigi.id().iphi()==iphiPed):
+            HOPedestalDigi.Fill(simDigi[5].nominal_fC()+simDigi[6].nominal_fC())
         
 
 print 'total records processed:',EvtN
 
 HOSimHitSum.Print()
 HOSimHitSum.Draw()
-gPad.Update()
-gPad.WaitPrimitive()
+# gPad.Update()
+# gPad.WaitPrimitive()
+
+c2 = TCanvas('c2', 'Rec hits')
+HOPedestalRecHit.Draw()
+HOTargetRecHit.Draw('same')
+
+c3 = TCanvas('c3', 'Digis')
+HOPedestalDigi.Draw()
+HOTargetDigi.Draw('same')
 
 outFile.Write()
-outFile.Close()
+# outFile.Close()

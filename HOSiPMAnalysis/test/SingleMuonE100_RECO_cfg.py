@@ -29,7 +29,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(50000)
+    input = cms.untracked.int32(500)
 )
 
 # Input source
@@ -86,15 +86,15 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
         PartID = cms.vint32(13),
 	# only in the center of tower ieta = 1, iphi = 1
-        #MaxEta = cms.double(0.0435),
-        #MinEta = cms.double(0.0435),
-        #MaxPhi = cms.double(0.0435),
-        #MinPhi = cms.double(0.0435),
-	# all over the HO area
-        MaxEta = cms.double(1.2),
-        MinEta = cms.double(0.),
+        MaxEta = cms.double(0.0435),
+        MinEta = cms.double(0.0435),
         MaxPhi = cms.double(0.0435),
         MinPhi = cms.double(0.0435),
+	# all over the HO area
+        # MaxEta = cms.double(1.2),
+        # MinEta = cms.double(0.),
+        # MaxPhi = cms.double(0.0435),
+        # MinPhi = cms.double(0.0435),
         MinE = cms.double(100.),
         MaxE = cms.double(100.)
     ),
@@ -122,7 +122,15 @@ process.hcales_ascii = hcales_ascii = cms.ESSource(
 		cms.PSet(
 			object = cms.string('ChannelQuality'),
 			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/chan_qual_0.txt')
-			)
+			),
+		cms.PSet(
+			object = cms.string('Pedestals'),
+			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/test_pedestals.txt')
+			),
+		cms.PSet(
+			object = cms.string('Gains'),
+			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/test_gains.txt')
+			),
 		)
 	)
 
