@@ -80,16 +80,23 @@ process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:mc', '')
 
+ietaTarget = 13
+iphiTarget = 1
+
+linieta = ietaTarget if (ietaTarget > 0) else ietaTarget + 1
+
+etaTarget = (linieta-1)*0.087 + 0.0435
+phiTarget = (iphiTarget-1)*0.087 + 0.0435
 
 
 process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
         PartID = cms.vint32(13),
 	# only in the center of tower ieta = 1, iphi = 1
-        MaxEta = cms.double(0.0435),
-        MinEta = cms.double(0.0435),
-        MaxPhi = cms.double(0.0435),
-        MinPhi = cms.double(0.0435),
+        MaxEta = cms.double(etaTarget),
+        MinEta = cms.double(etaTarget),
+        MaxPhi = cms.double(phiTarget),
+        MinPhi = cms.double(phiTarget),
 	# all over the HO area
         # MaxEta = cms.double(1.2),
         # MinEta = cms.double(0.),

@@ -37,10 +37,17 @@ parser.add_option('--testNumbering', dest='testNumbers', default=False,
 
 print 'opts:',opts,'\nargs:',args
 
+try:
+    import pyroot_logon
+except ImportError as e:
+    print "no pyroot_logon.py file to customize ROOT defaults"
+
 from DataFormats.FWLite import Events, Handle
 from ROOT import *
 from array import array
 from math import sqrt
+import os
+
 
 
 files = []
@@ -65,11 +72,11 @@ EnergyVsEta = TH2F("EnergyVsEta", "Energy vs Eta", 31, -15.5, 15.5, 50, 0., 0.05
 SimTargetEt = TH1F("SimTargetEt", "SimTargetEt", 40, 0., 0.02)
 
 HOTargetRecHit = TH1F("HOTargetRecHit", "HO (target)", 40, -1., 5.)
-HOPedestalRecHit = TH1F("HOPedestalRecHit", "HO (target)", 40, -1., 5.)
+HOPedestalRecHit = TH1F("HOPedestalRecHit", "HO (target)", 400, -1., 5.)
 HOPedestalRecHit.SetLineColor(kRed)
 
-HOTargetDigi = TH1F("HOTargetDigi", "HO (target)", 50, 0., 300.)
-HOPedestalDigi = TH1F("HOPedestalDigi", "HO (target)", 50, 0., 300.)
+HOTargetDigi = TH1F("HOTargetDigi", "HO (target)", 30, 0., 300.)
+HOPedestalDigi = TH1F("HOPedestalDigi", "HO (target)", 300, 0., 300.)
 HOPedestalDigi.SetLineColor(kRed)
 
 ietaPed = -1*opts.ieta
@@ -114,7 +121,7 @@ for event in events:
             if (ieta == opts.ieta) and (iphi == opts.iphi):
                 sumHBTarget += hit.energy()
     linEta = (opts.ieta > 0) if opts.ieta else opts.ieta+1
-    targetEta = (opts.ieta-1)*0.087 + 0.0435
+    targetEta = (linEta-1)*0.087 + 0.0435
     HOSimHitSum.Fill(sumSim)
     SimTargetEt.Fill(sum11*sin(eta2theta(targetEta)))
     
@@ -140,9 +147,12 @@ for event in events:
 print 'total records processed:',EvtN
 
 HOSimHitSum.Print()
-HOSimHitSum.Draw()
+# HOSimHitSum.Draw()
 # gPad.Update()
 # gPad.WaitPrimitive()
+
+c1 = TCanvas('c1', 'Sim hits')
+SimTargetEt.Draw()
 
 c2 = TCanvas('c2', 'Rec hits')
 HOPedestalRecHit.Draw()
