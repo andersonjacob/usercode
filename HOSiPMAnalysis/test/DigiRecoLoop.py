@@ -19,6 +19,29 @@ from math import exp, atan, sin, cos
 def eta2theta(eta):
     return 2*atan(exp(-eta))
 
+def findMax(func, x):
+
+    norm = RooArgList(x)
+    pdfF1 = func.asTF(norm)
+
+    maxx1 = pdfF1.GetMaximumX()
+
+    print 'max {1}: {0:0.4f}'.format(maxx1, x.GetName())
+                
+    return maxx1
+
+def fillDataSet(data, x, N, dsName = 'ds'):
+    cols = RooArgSet(x)
+    ds = RooDataSet(dsName, dsName, cols)
+    #ds.Print()
+    print 'length data:', N
+    for datum in range(0,N):
+        if (data[datum] < x.getMax()) and (data[datum] > x.getMin()):
+            x.setVal(data[datum])
+            ds.add(cols)
+    ds.Print()
+    return ds
+
 #2345678911234567892123456789312345678941234567895123456789612345678971234567898
 from optparse import OptionParser
 
@@ -84,6 +107,13 @@ iphiPed = opts.iphi + 36
 if iphiPed > 72:
     iphiPed -= 72
 
+data = []
+
+linEta = opts.ieta if (opts.ieta > 0) else opts.ieta+1
+targetEta = (linEta-1)*0.087 + 0.0435
+
+print 'linEta', linEta, 'eta:', targetEta, 'theta:', eta2theta(targetEta)
+
 for event in events:
     ## if EvtN > 9:
     ##     break
@@ -120,10 +150,9 @@ for event in events:
             sumHE += hit.energy()
             if (ieta == opts.ieta) and (iphi == opts.iphi):
                 sumHBTarget += hit.energy()
-    linEta = (opts.ieta > 0) if opts.ieta else opts.ieta+1
-    targetEta = (linEta-1)*0.087 + 0.0435
     HOSimHitSum.Fill(sumSim)
     SimTargetEt.Fill(sum11*sin(eta2theta(targetEta)))
+    data.append(sum11)
     
     event.getByLabel(horecoLabel, horecoHandle)
     horeco = horecoHandle.product()
@@ -153,14 +182,57 @@ HOSimHitSum.Print()
 
 c1 = TCanvas('c1', 'Sim hits')
 SimTargetEt.Draw()
+SimTargetEt.Draw()
 
 c2 = TCanvas('c2', 'Rec hits')
 HOPedestalRecHit.Draw()
 HOTargetRecHit.Draw('same')
+HOTargetRecHit.Print()
 
 c3 = TCanvas('c3', 'Digis')
 HOPedestalDigi.Draw()
 HOTargetDigi.Draw('same')
+HOTargetDigi.Print()
 
+outFile.cd()
 outFile.Write()
+
+thews = RooWorkspace('theWS', 'theWS')
+simE = thews.factory('simE[0., 0.05]')
+
+ds = fillDataSet(data, simE, len(data))
+getattr(thews, 'import')(ds)
+
+mpv = thews.factory('mpv[0.005, 0., 5.]')
+width = thews.factory('width[0.0003, 0., 5.]')
+lnd = thews.factory('RooLandau::mip(simE, mpv, width)')
+
+sigma = thews.factory('sigma[0.0001, 0., 5.]')
+res = thews.factory('RooGaussian::res(simE, 0., sigma)')
+
+if opts.ieta > 4:
+    mpv.setVal(0.003)
+    sigma.setVal(0.00001)
+    width.setVal(0.0001)
+
+lndgaus = thews.factory('RooFFTConvPdf::lndgaus(simE, mip, res)')
+
+# fitter = lnd
+fitter = lndgaus
+fitter.Print()
+
+fitter.fitTo(ds)
+
+c4 = TCanvas('c4', 'Fit')
+xf = simE.frame(RooFit.Bins(50), RooFit.Range(0., 0.02))
+xf.SetName('SimHitEFit')
+ds.plotOn(xf)
+fitter.plotOn(xf)
+xf.Draw()
+
+Emax = findMax(fitter, simE)
+print 'max ET:', Emax*sin(eta2theta(targetEta))
+
+thews.Write()
+xf.Write()
 # outFile.Close()

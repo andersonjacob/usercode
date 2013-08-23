@@ -135,6 +135,10 @@ process.hcales_ascii = hcales_ascii = cms.ESSource(
 			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/test_pedestals.txt')
 			),
 		cms.PSet(
+			object = cms.string('PedestalWidths'),
+			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/test_pedestalWidths.txt')
+			),
+		cms.PSet(
 			object = cms.string('Gains'),
 			file = cms.FileInPath('usercode/HOSiPMAnalysis/data/test_gains.txt')
 			),

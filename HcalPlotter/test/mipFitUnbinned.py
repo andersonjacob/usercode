@@ -1,8 +1,3 @@
-import sys, os
-sys.path.append(os.environ['HOME']+'/pyroot')
-del sys
-del os
-
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -28,8 +23,10 @@ parser.add_option('--digi', action='store_true', dest='digi', default=False,
                   help='do HO digi instead of rechit')
 (opts, args) = parser.parse_args()
 
-import root_logon
-#import pyroot_fwlite.py
+try:
+    import pyroot_logon
+except ImportError as e:
+    print "no pyroot_logon.py file to customize ROOT defaults"
 
 from ROOT import TFile, TH1F, TCanvas, kRed, kBlue, TMath, \
      TTree, gDirectory, gROOT, RooWorkspace, RooRealVar, RooLandau, \
@@ -38,21 +35,9 @@ from ROOT import TFile, TH1F, TCanvas, kRed, kBlue, TMath, \
 ## from array import array
 
 from tbRoutines import *
-from pedRoutines import fillDataSet, fitPed, findOnePe
+from pedRoutines import fillDataSet, fitPed, findOnePe, findMax
 import re
 from math import sqrt
-
-
-def findMax(func, x):
-
-    norm = RooArgList(x)
-    pdfF1 = func.asTF(norm)
-
-    maxx1 = pdfF1.GetMaximumX()
-
-    print 'maxx: {0:0.4f}'.format(maxx1)
-                
-    return maxx1
 
 def makeHistPdf(hist, ws, x):
     theVars = RooArgList(x)

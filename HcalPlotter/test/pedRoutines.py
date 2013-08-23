@@ -4,6 +4,17 @@ from ROOT import RooDataSet, RooRealVar, RooGaussian, RooArgSet, RooFit,\
 
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
+def findMax(func, x):
+
+    norm = RooArgList(x)
+    pdfF1 = func.asTF(norm)
+
+    maxx1 = pdfF1.GetMaximumX()
+
+    print 'max {1}: {0:0.4f}'.format(maxx1, x.GetName())
+                
+    return maxx1
+
 def fillDataSet(data, x, N, dsName = 'ds'):
     cols = RooArgSet(x)
     ds = RooDataSet(dsName, dsName, cols)
@@ -137,10 +148,6 @@ def findOnePe(hist, ws, name='x', Npe = 1):
     getattr(ws, 'import')(pedPlusOne)
 
 if __name__ == '__main__':
-    import sys, os
-    sys.path.append(os.environ['HOME']+'/pyroot')
-    del sys
-    del os
     from optparse import OptionParser
 
     parser = OptionParser()
@@ -152,7 +159,11 @@ if __name__ == '__main__':
                       help='Number of pe to try to fit')
     (opts, args) = parser.parse_args()
 
-    import root_logon
+    try:
+        import pyroot_logon
+    except ImportError as e:
+        print "no pyroot_logon.py file to customize ROOT defaults"
+
 
     from ROOT import TFile, TTree, gDirectory, TMath, kRed, kDashed
 
