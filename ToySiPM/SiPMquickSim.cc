@@ -62,9 +62,10 @@ double timeDepResponse(SiPMModel& sipm, unsigned int pes, double dT = 0.) {
   // gPad->WaitPrimitive();
 
   double sum = 0.;
+  double time = 0.;
   for (int tbin = 1; tbin <= nbins; ++tbin) {
-    sum += sipm.hitPixels((unsigned int)pedist.GetBinContent(tbin), 0., dT);
-    sipm.expRecover(dt);
+    sum += sipm.hitPixels((unsigned int)pedist.GetBinContent(tbin), dT, time);
+    time += dt;
   }
 
   return sum;
@@ -140,7 +141,7 @@ void quickSim (Int_t NP = 15000, Int_t trials = 500, Double_t pctdamage = 0.,
 	if (doTimeDepSignal)
 	  val = timeDepResponse(SiPM, rnd.Poisson(pes), dT);
 	else
-	  val = SiPM.hitPixels(rnd.Poisson(pes), 0., dT);
+	  val = SiPM.hitPixels(rnd.Poisson(pes), dT);
       }
       val *= gain;
       if (QIEver == 8) {
