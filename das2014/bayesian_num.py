@@ -1,5 +1,6 @@
 import sys
 import ROOT
+import os
 from ROOT import RooFit,RooStats
 ROOT.gSystem.SetIncludePath('-I$ROOFITSYS/include')
 if os.access('RooPowerFunction.cxx', os.R_OK):
@@ -8,7 +9,8 @@ if os.access('RooPowerFunction.cxx', os.R_OK):
 ROOT.gStyle.SetOptStat(111111)
 
 ################################################################################
-def main():
+def GetBayesianInterval(filename = "workspace.root",
+                        wsname = 'myWS'):
     # this function loads a workspace and computes
     # a Bayesian upper limit
 
@@ -56,23 +58,13 @@ def main():
     bCalc.SetScanOfPosterior(100);
     pPlot = bCalc.GetPosteriorPlot();
     pPlot.Draw();
-    gPad.Update()
+    ROOT.gPad.Update()
     c1.SaveAs("bayesian_num_posterior.pdf");
-
-    # clean up a little
-    del pSInt;
-
-    return 0
+    print "Double click on the plot to close"
+    ROOT.gPad.WaitPrimitive()
 
 
 
 ################################################################################
 if __name__=="__main__":
-    #main()
-    rep = ''
-    while not rep in [ 'q', 'Q' ]:
-        rep = raw_input( 'enter "q" to quit: ' )
-        if 1 < len(rep):
-            rep = rep[0]
-
-
+    GetBayesianInterval()
