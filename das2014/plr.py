@@ -51,7 +51,7 @@ def GetPLRInterval(filename = "workspace.root",
     
 
     # make posterior PDF plot for POI
-    c1 = ROOT.TCanvas("likelihood furnction")
+    c1 = ROOT.TCanvas("plr", "likelihood furnction")
     pPlot = RooStats.LikelihoodIntervalPlot(pSInt)
     pPlot.SetRange(0., 0.006)
     pPlot.SetMaximum(5.)
@@ -59,8 +59,9 @@ def GetPLRInterval(filename = "workspace.root",
     pPlot.Draw()
     ROOT.gPad.Update()
     c1.SaveAs("plr_plot.pdf")
+
     if interactive:
-        raw_input("press <enter> to continue")
+        raw_input("\npress <enter> to continue")
 
 
 

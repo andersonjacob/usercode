@@ -60,31 +60,30 @@ def GetBayesianInterval(filename = "workspace.root",
     print "one-sided 95%.C.L. bayesian credible interval for xsec: " , "[" , lower_bound , ", " , upper_bound , "]" 
     
     # make posterior PDF plot for POI
-    c1 = ROOT.TCanvas ("posterior")
+    c1 = ROOT.TCanvas ("posterior","posterior")
     plot = RooStats.MCMCIntervalPlot(pMcmcInt)
     plot.Draw()
     c1.SaveAs("bayesian_mcmc_posterior.pdf")
     
     # make scatter plots to visualise the Markov chain
-    c2 = ROOT.TCanvas("xsec_vs_beta_lumi")
+    c2 = ROOT.TCanvas("xsec_vs_beta_lumi","xsec vs lumi_beta")
     plot.DrawChainScatter( pWs.var("xsec"), pWs.var("lumi_beta"))
     c2.SaveAs("scatter_mcmc_xsec_vs_beta_lumi.pdf")
     
-    c3 = ROOT.TCanvas ("xsec_vs_beta_efficiency")
+    c3 = ROOT.TCanvas ("xsec_vs_beta_efficiency","xsec vs eff_beta")
     plot.DrawChainScatter( pWs.var("xsec"), pWs.var("eff_beta"))
     c3.SaveAs("scatter_mcmc_xsec_vs_beta_efficiency.pdf")
     
-    c4 = ROOT.TCanvas ("xsec_vs_beta_nbkg")
+    c4 = ROOT.TCanvas ("xsec_vs_beta_nbkg","xsec vs nbkg_beta")
     plot.DrawChainScatter( pWs.var("xsec"), pWs.var("nbkg_beta"))
     c4.SaveAs("scatter_mcmc_xsec_vs_beta_nbkg.pdf")
     
     ROOT.gPad.Update()
+
     if interactive:
-        raw_input("press <enter> to continue")
+        raw_input("\npress <enter> to continue")
 
 
 ################################################################################
 if __name__=="__main__":
     GetBayesianInterval(interactive = True)
-
-

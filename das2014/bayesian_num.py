@@ -54,14 +54,15 @@ def GetBayesianInterval(filename = "workspace.root",
     
 
     # make posterior PDF plot for POI
-    c1 = ROOT.TCanvas("posterior")
+    c1 = ROOT.TCanvas("posterior", "posterior")
     bCalc.SetScanOfPosterior(100)
     pPlot = bCalc.GetPosteriorPlot()
     pPlot.Draw()
     ROOT.gPad.Update()
     c1.SaveAs("bayesian_num_posterior.pdf")
+
     if interactive:
-        raw_input("press <enter> to continue")
+        raw_input("\npress <enter> to continue")
 
 
 
