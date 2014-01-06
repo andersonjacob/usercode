@@ -10,7 +10,7 @@ ROOT.gStyle.SetOptStat(111111)
 
 ################################################################################
 def GetBayesianInterval(filename = "workspace.root",
-                        wsname = 'myWS'):
+                        wsname = 'myWS', interactive = False):
     # this function loads a workspace and computes
     # a Bayesian upper limit
 
@@ -60,11 +60,11 @@ def GetBayesianInterval(filename = "workspace.root",
     pPlot.Draw();
     ROOT.gPad.Update()
     c1.SaveAs("bayesian_num_posterior.pdf");
-    print "Double click on the plot to close"
-    ROOT.gPad.WaitPrimitive()
+    if interactive:
+        raw_input("press <enter> to continue")
 
 
 
 ################################################################################
 if __name__=="__main__":
-    GetBayesianInterval()
+    GetBayesianInterval(interactive = True)
