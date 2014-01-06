@@ -36,15 +36,15 @@ def GetBayesianInterval(filename = "workspace.root",
     
     # create RooStats Bayesian calculator and set parameters
     # Metropolis-Hastings algorithm needs a proposal function
-    sp = RooStats.SequentialProposal(10.0);
+    sp = RooStats.SequentialProposal(10.0)
     
-    mcmc = RooStats.MCMCCalculator( data, pSbHypo );
-    mcmc.SetConfidenceLevel(0.95);
-    mcmc.SetNumIters(100000);          # Metropolis-Hastings algorithm iterations
-    mcmc.SetProposalFunction(sp);
-    mcmc.SetNumBurnInSteps(500); # first N steps to be ignored as burn-in
-    mcmc.SetLeftSideTailFraction(0.0);
-    mcmc.SetNumBins(40); # for plotting only - does not affect limit calculation
+    mcmc = RooStats.MCMCCalculator( data, pSbHypo )
+    mcmc.SetConfidenceLevel(0.95)
+    mcmc.SetNumIters(100000)          # Metropolis-Hastings algorithm iterations
+    mcmc.SetProposalFunction(sp)
+    mcmc.SetNumBurnInSteps(500) # first N steps to be ignored as burn-in
+    mcmc.SetLeftSideTailFraction(0.0)
+    mcmc.SetNumBins(40) # for plotting only - does not affect limit calculation
     
     
     # estimate credible interval
@@ -53,30 +53,30 @@ def GetBayesianInterval(filename = "workspace.root",
     #       NOT to the upper limit on the parameter of interest
     #       (it just happens to be the same for the one-sided
     #       interval starting at 0)
-    pMcmcInt = mcmc.GetInterval();
-    upper_bound = pMcmcInt.UpperLimit( pWs.var("xsec") );
-    lower_bound = pMcmcInt.LowerLimit( pWs.var("xsec") );
+    pMcmcInt = mcmc.GetInterval()
+    upper_bound = pMcmcInt.UpperLimit( pWs.var("xsec") )
+    lower_bound = pMcmcInt.LowerLimit( pWs.var("xsec") )
     
     print "one-sided 95%.C.L. bayesian credible interval for xsec: " , "[" , lower_bound , ", " , upper_bound , "]" 
     
     # make posterior PDF plot for POI
-    c1 = ROOT.TCanvas ("posterior");
-    plot = RooStats.MCMCIntervalPlot(pMcmcInt);
-    plot.Draw();
-    c1.SaveAs("bayesian_mcmc_posterior.pdf");
+    c1 = ROOT.TCanvas ("posterior")
+    plot = RooStats.MCMCIntervalPlot(pMcmcInt)
+    plot.Draw()
+    c1.SaveAs("bayesian_mcmc_posterior.pdf")
     
     # make scatter plots to visualise the Markov chain
-    c2 = ROOT.TCanvas("xsec_vs_beta_lumi");
-    plot.DrawChainScatter( pWs.var("xsec"), pWs.var("lumi_beta"));
-    c2.SaveAs("scatter_mcmc_xsec_vs_beta_lumi.pdf");
+    c2 = ROOT.TCanvas("xsec_vs_beta_lumi")
+    plot.DrawChainScatter( pWs.var("xsec"), pWs.var("lumi_beta"))
+    c2.SaveAs("scatter_mcmc_xsec_vs_beta_lumi.pdf")
     
-    c3 = ROOT.TCanvas ("xsec_vs_beta_efficiency");
-    plot.DrawChainScatter( pWs.var("xsec"), pWs.var("eff_beta"));
-    c3.SaveAs("scatter_mcmc_xsec_vs_beta_efficiency.pdf");
+    c3 = ROOT.TCanvas ("xsec_vs_beta_efficiency")
+    plot.DrawChainScatter( pWs.var("xsec"), pWs.var("eff_beta"))
+    c3.SaveAs("scatter_mcmc_xsec_vs_beta_efficiency.pdf")
     
-    c4 = ROOT.TCanvas ("xsec_vs_beta_nbkg");
-    plot.DrawChainScatter( pWs.var("xsec"), pWs.var("nbkg_beta"));
-    c4.SaveAs("scatter_mcmc_xsec_vs_beta_nbkg.pdf");
+    c4 = ROOT.TCanvas ("xsec_vs_beta_nbkg")
+    plot.DrawChainScatter( pWs.var("xsec"), pWs.var("nbkg_beta"))
+    c4.SaveAs("scatter_mcmc_xsec_vs_beta_nbkg.pdf")
     
     ROOT.gPad.Update()
     if interactive:
