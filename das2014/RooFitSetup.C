@@ -1,3 +1,3 @@
 {
-  gSystem->SetIncludePath("-I$ROOTFITSYS/include");
+  gSystem->SetIncludePath("-I$ROOFITSYS/include");
 }
