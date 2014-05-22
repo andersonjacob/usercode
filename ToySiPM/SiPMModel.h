@@ -40,6 +40,8 @@ public:
 			   double tempDep = 0., double dT = 0., 
 			   double xtalk = 0.);
   static void setSeed(unsigned int seed) { rnd.SetSeed(seed); }
+  static double correctSaturation(double output, unsigned int NP, 
+				  float xtalk = 0.);
 
 protected:
 

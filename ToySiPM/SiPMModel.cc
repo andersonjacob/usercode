@@ -31,6 +31,7 @@
 #include "SiPMModel.h"
 #include "TMath.h"
 #include <assert.h>
+#include <iostream>
 
 TRandom3 SiPMModel::rnd = TRandom3(0);
 
@@ -158,6 +159,17 @@ double SiPMModel::hitPixelsQ(unsigned int NP, unsigned int pes, double eff,
     if ((q<=NP))
       return q*(1-(dT*tempDep));
   }
+}
+
+double SiPMModel::correctSaturation(double output, unsigned int NP, 
+				    float xtalk) {
+  if (output >= NP) return /*1.e6*/7.7*NP;
+  // if (output < NP*0.05) return output;
+  double val = TMath::Log(1.0 - output/NP);
+  val *= -1*double(NP);
+  if ((xtalk > 0.) && (xtalk < 1.))
+    val *= (1-xtalk);
+  return val;
 }
 
 void SiPMModel::setNP(unsigned int NP) {
